@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/x-icon" href="./icone.ico">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Documentos - Sodramar</title>
+    <style>
+        /* --- ESTILOS DO PORTAL --- */
+        :root {
+            --cor-primaria: #005bbb;
+            --cor-secundaria: #004494;
+            --cor-fundo: #f4f7f6;
+            --cor-texto: #333333;
+            --cor-card: #ffffff;
+            --sombra: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--cor-card);
+            padding: 20px 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--cor-primaria);
+        }
+
+        .logo img {
+            max-height: 50px;
+        }
+
+        .header-titulo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--cor-primaria);
+            text-transform: uppercase;
+        }
+
+        main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .boas-vindas {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .boas-vindas h2 {
+            font-size: 28px;
+            margin: 0 0 10px 0;
+            color: #222;
+        }
+
+        .boas-vindas p {
+            font-size: 16px;
+            color: #666;
+            margin: 0;
+        }
+
+        .grid-menu {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .cartao {
+            background-color: var(--cor-card);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: var(--sombra);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: var(--cor-texto);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-top: 4px solid transparent;
+        }
+
+        .cartao:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-top: 4px solid var(--cor-primaria);
+        }
+
+        .icone {
+            font-size: 45px;
+            margin-bottom: 15px;
+        }
+
+        .cartao-titulo {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--cor-primaria);
+        }
+
+        .cartao-desc {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #e9ecef;
+            color: #777;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .header-titulo { font-size: 18px; }
+            .grid-menu { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <!-- Substitua pelo logo da Sodramar, se tiver. Se não, ficará o texto. -->
+            <img src="./logo.png" alt="Sodramar" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+            <span style="display:none; font-size: 24px; font-weight: bold; color: var(--cor-primaria);">SODRAMAR</span>
+        </div>
+        <div class="header-titulo">Central de Ferramentas</div>
+    </header>
+
+    <main>
+        <div class="boas-vindas">
+            <h2>Olá, Equipe!</h2>
+            <p>Selecione abaixo o documento que deseja gerar hoje.</p>
+        </div>
+
+        <div class="grid-menu">
+            
+            <!-- CARTÃO 1: OAT -->
+            <a href="./OAT01 VERSAO FINAL.html" class="cartao">
+                <div class="icone">🛠️</div>
+                <div class="cartao-titulo">Gerador de OAT</div>
+                <div class="cartao-desc">Ordem de Atendimento com consulta de produtos e cálculo de distância.</div>
+            </a>
+
+            <!-- CARTÃO 2: SAD -->
+            <a href="./SAD01 VERSAO FINAL.html" class="cartao">
+                <div class="icone">📝</div>
+                <div class="cartao-titulo">Gerador de SAD</div>
+                <div class="cartao-desc">Solicitação de Alteração de Desenho técnico com anexos.</div>
+            </a>
+
+            <!-- CARTÃO 3: SAE -->
+            <a href="./SAE01 VERSAO FINAL.html" class="cartao">
+                <div class="icone">⚙️</div>
+                <div class="cartao-titulo">Gerador de SAE</div>
+                <div class="cartao-desc">Solicitação de Alteração de Engenharia com listagem de materiais.</div>
+            </a>
+
+            <!-- CARTÃO 4: SolAB -->
+            <a href="./SolAB VERSAO FINAL.html" class="cartao">
+                <div class="icone">📄</div>
+                <div class="cartao-titulo">Gerador de SolAB</div>
+                <div class="cartao-desc">Sistema de Solicitação de Abertura de documentos ou processos internos.</div>
+            </a>
+
+        </div>
+    </main>
+
+    <footer>
+        Sistema de Geração de Documentos Internos - Sodramar
+    </footer>
+
+</body>
+</html>

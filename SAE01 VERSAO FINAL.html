@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/x-icon" href="icone.ico">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de SAE - Sodramar</title>
+    <style>
+        /* --- ESTILO DO SISTEMA (TELA DE TRABALHO) --- */
+        :root {
+            --cor-primaria: #005bbb;
+            --cor-fundo: #e9ecef;
+            --cor-card: #ffffff;
+            --cor-borda: #ced4da;
+        }
+
+        body { font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; background-color: var(--cor-fundo); color: #333; }
+        
+        .painel-lateral { width: 500px; padding: 20px; overflow-y: auto; background-color: var(--cor-card); border-right: 1px solid var(--cor-borda); box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        .painel-lateral h1 { font-size: 18px; color: var(--cor-primaria); margin-top: 0; border-bottom: 2px solid var(--cor-primaria); padding-bottom: 10px; }
+        
+        /* Indicador de carregamento do DB */
+        #status-db { font-size: 12px; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .status-ok { background-color: #d4edda !important; color: #155724 !important; border-color: #c3e6cb !important; }
+        .status-erro { background-color: #f8d7da !important; color: #721c24 !important; border-color: #f5c6cb !important; }
+
+        .form-grupo { margin-bottom: 12px; }
+        .form-grupo label { display: block; font-weight: bold; font-size: 12px; margin-bottom: 4px; color: #555; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px; font-size: 12px; box-sizing: border-box; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0,91,187,0.2); }
+        
+        /* Sistema de Travamento */
+        input:disabled, select:disabled, button:disabled, textarea:disabled { background-color: #e9ecef; cursor: not-allowed; opacity: 0.7; }
+
+        .linha { display: flex; gap: 10px; }
+        .linha > div { flex: 1; }
+
+        /* Botões de Ação e Dinâmicos */
+        .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
+        .btn-acao:hover:not(:disabled) { background-color: #218838; }
+
+        .cabecalho-secao { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
+        .cabecalho-secao legend { font-weight: bold; font-size: 12px; color: var(--cor-primaria); margin: 0; padding: 0; border: none; }
+        
+        .btn-add { background-color: #28a745; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-add:hover:not(:disabled) { background-color: #218838; }
+        .btn-remove { background-color: #dc3545; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 14px; font-weight: bold; cursor: pointer; height: 100%; display: flex; align-items: center; justify-content: center; width: 35px; }
+        .btn-remove:hover:not(:disabled) { background-color: #c82333; }
+
+        /* Blocos das Linhas Dinâmicas */
+        .linha-dinamica { border: 1px solid #ddd; padding: 8px; border-radius: 5px; margin-bottom: 8px; background-color: #fff; position: relative; }
+        .linha-dinamica .btn-remove { position: absolute; right: 8px; top: 8px; padding: 4px; width: 25px; height: 25px; }
+        .linha-dinamica-conteudo { padding-right: 35px; } 
+
+        /* Caixa de Checkboxes Dinâmica */
+        .caixa-checkboxes { border: 1px solid var(--cor-borda); padding: 8px 10px; border-radius: 4px; background: #fff; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; min-height: 35px; box-sizing: border-box; }
+        .caixa-checkboxes label { font-weight: normal; display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0; cursor: pointer; }
+        .caixa-checkboxes input[type="checkbox"] { width: auto; margin: 0; }
+
+        /* --- ESTILO DA FOLHA DE IMPRESSÃO (A4 RESTRITO) --- */
+        .painel-preview { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; justify-content: center; background-color: #525659; }
+        
+        .folha-a4 {
+            width: 210mm; min-height: 297mm; padding: 10mm 15mm; box-sizing: border-box; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            font-family: Arial, sans-serif; color: #000; font-size: 11px; display: flex; flex-direction: column;
+            
+            /* SIMULADOR DE QUEBRA DE PÁGINA (Exibição em Tela) */
+            background-color: white;
+            background-image: linear-gradient(to bottom, #ffffff 293mm, #525659 293mm, #525659 297mm);
+            background-size: 100% 297mm;
+        }
+
+        .cabecalho-sae { border: 1.5px solid #000; display: flex; align-items: stretch; margin-bottom: 10px; }
+        .cab-logo { width: 25%; padding: 10px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center; }
+        .cab-logo img { max-width: 100%; max-height: 50px; }
+        .cab-centro { width: 50%; text-align: center; font-weight: bold; border-right: 1px solid #000; display: flex; flex-direction: column; }
+        .cab-setor { border-bottom: 1px solid #000; padding: 5px; font-size: 12px; }
+        .cab-titulo { padding: 10px; font-size: 14px; flex-grow: 1; display: flex; align-items: center; justify-content: center; }
+        .cab-dados { width: 25%; display: flex; flex-direction: column; font-weight: bold; }
+        .cab-dados div { border-bottom: 1px solid #000; padding: 6px 5px; font-size: 10px; flex-grow: 1; }
+        .cab-dados div:last-child { border-bottom: none; }
+
+        .bloco-solicitante-visto { display: flex; gap: 10px; margin-bottom: 10px; }
+        .campo-solicitante { border: 1px solid #000; padding: 8px 10px; font-weight: bold; flex: 1; font-size: 11px; display: flex; align-items: center; min-height: 40px; box-sizing: border-box; }
+        .campo-solicitante span { font-weight: normal; margin-left: 5px; text-transform: uppercase; flex-grow: 1; }
+        .campo-visto-superior { border: 1px solid #000; padding: 8px 10px; font-weight: bold; flex: 1; font-size: 11px; text-transform: uppercase; display: flex; align-items: center; min-height: 40px; box-sizing: border-box; }
+
+        .titulo-secao { background-color: #e0e0e0; border: 1px solid #000; border-bottom: none; padding: 4px; font-weight: bold; text-align: center; text-transform: uppercase; font-size: 11px;}
+        
+        .secao-exclusao { background-color: #f8d7da !important; border: 1px solid #000; border-bottom: none; color: #721c24; }
+        .secao-inclusao { background-color: #d4edda !important; border: 1px solid #000; border-bottom: none; color: #155724; }
+
+        table.tabela-sae { width: 100%; border-collapse: collapse; margin-bottom: 10px; text-align: center; }
+        table.tabela-sae th, table.tabela-sae td { border: 1px solid #000; padding: 4px; text-transform: uppercase; }
+        table.tabela-sae th { background-color: #f5f5f5; font-size: 10px; }
+        table.tabela-sae td { font-size: 11px; height: 18px; word-break: break-word; }
+        .col-desc { text-align: left; width: 45%; }
+
+        #tbody-envolvidos td { height: 55px; vertical-align: middle; padding: 5px; }
+
+        .tabela-exclusao th { background-color: #f5c6cb !important; }
+        .tabela-inclusao th { background-color: #c3e6cb !important; }
+
+        /* BLOCO DO MOTIVO */
+        .caixa-motivo { border: 1px solid #000; margin-bottom: 10px; display: flex; flex-direction: column; page-break-inside: avoid; }
+        .titulo-motivo { background-color: #e0e0e0; font-weight: bold; font-style: italic; text-align: center; padding: 3px; font-size: 11px; border-bottom: 1px solid #000; }
+        .conteudo-motivo { background-color: #fff200; font-weight: bold; font-style: italic; text-decoration: underline; text-align: center; padding: 8px; font-size: 11px; text-transform: uppercase; min-height: 14px; }
+
+        .caixa-perguntas { border: 1px solid #000; padding: 5px; margin-bottom: 10px; font-size: 11px; page-break-inside: avoid; }
+        .linha-pergunta { display: flex; margin-bottom: 5px; align-items: center; }
+        .pergunta-texto { font-weight: bold; margin-right: 10px; width: 250px; }
+        .checkbox-fake { display: inline-block; width: 12px; height: 12px; border: 1px solid #000; margin-right: 5px; text-align: center; line-height: 12px; font-weight: bold; font-size: 10px; }
+
+        .caixa-pcp { border: 1px solid #000; margin-bottom: 10px; page-break-inside: avoid; }
+        .titulo-pcp { background-color: #000; color: #fff; font-weight: bold; text-align: center; padding: 3px; font-size: 11px; }
+        .conteudo-pcp { padding: 5px; }
+
+        /* --- CONFIGURAÇÕES PARA EVITAR CORTES NO PDF E QUEBRAR PÁGINAS CORRETAMENTE --- */
+        @media print {
+            body { background: none; margin: 0; padding: 0; height: auto; }
+            .painel-lateral { display: none; }
+            .painel-preview { display: block; padding: 0; overflow: visible; background: none; }
+            
+            .folha-a4 { box-shadow: none; margin: 0; padding: 10mm; width: 100%; height: auto; min-height: 100vh; display: block !important; background: #ffffff !important; }
+            
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            .titulo-secao, .caixa-perguntas, .caixa-pcp, .caixa-motivo { page-break-inside: avoid; }
+
+            .titulo-secao { background-color: #e0e0e0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .secao-exclusao { background-color: #f8d7da !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .secao-inclusao { background-color: #d4edda !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .tabela-exclusao th { background-color: #f5c6cb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .tabela-inclusao th { background-color: #c3e6cb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .titulo-motivo { background-color: #e0e0e0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .conteudo-motivo { background-color: #fff200 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .titulo-pcp { background-color: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { size: A4; margin: 10mm; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="painel-lateral">
+        <h1>Gerador de SAE</h1>
+        
+        <div id="status-db">⏳ Conectando à base de dados. Por favor, aguarde...</div>
+
+        <form id="formSAE">
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">1. Identificação</legend>
+                
+                <div class="form-grupo">
+                    <label>Setor Emissor</label>
+                    <select id="in-setor-emissor" onchange="atualizar()">
+                        <option value="LABORATÓRIO" selected>LABORATÓRIO</option>
+                        <option value="PRODUÇÃO">PRODUÇÃO</option>
+                        <option value="DESENVOLVIMENTO">DESENVOLVIMENTO</option>
+                    </select>
+                </div>
+
+                <div class="linha">
+                    <div class="form-grupo"><label>SAE Nº</label><input type="text" id="in-sae-num" oninput="atualizar()"></div>
+                    <div class="form-grupo"><label>Data</label><input type="text" id="in-data" oninput="formatarData(this)" placeholder="DD/MM/AAAA" maxlength="10"></div>
+                </div>
+                <div class="form-grupo"><label>Nome do Solicitante</label><input type="text" id="in-solicitante" oninput="atualizar()"></div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <div class="cabecalho-secao">
+                    <legend>2. Produto Envolvido</legend>
+                    <button type="button" class="btn-add" onclick="addLinha('pe')">+ Add Produto</button>
+                </div>
+                <div id="container-pe"></div> 
+            </fieldset>
+
+            <fieldset style="border: 1px solid #f5c6cb; padding: 10px; border-radius: 5px; margin-bottom: 15px; background-color: #fdf3f4;">
+                <div class="cabecalho-secao" style="border-color: #f5c6cb;">
+                    <legend style="color: #9c2424;">3. Exclusão de Item (Vermelho)</legend>
+                    <button type="button" class="btn-add" onclick="addLinha('ex')">+ Add Exclusão</button>
+                </div>
+                <div id="container-ex"></div> 
+            </fieldset>
+
+            <fieldset style="border: 1px solid #c3e6cb; padding: 10px; border-radius: 5px; margin-bottom: 15px; background-color: #f4faf5;">
+                <div class="cabecalho-secao" style="border-color: #c3e6cb;">
+                    <legend style="color: #206127;">4. Inclusão de Item (Verde)</legend>
+                    <button type="button" class="btn-add" onclick="addLinha('in')">+ Add Inclusão</button>
+                </div>
+                <div id="container-in"></div> 
+            </fieldset>
+
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">5. Motivo da Alteração</legend>
+                <div class="form-grupo">
+                    <textarea id="in-motivo" rows="2" oninput="atualizar()" placeholder="Descreva o motivo da alteração..."></textarea>
+                </div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">6. Questionário</legend>
+                <div class="linha">
+                    <div class="form-grupo"><label>Bloquear itens p/ compra?</label><select id="in-bloqueio" onchange="atualizar()"><option value="NAO">NÃO</option><option value="SIM">SIM</option></select></div>
+                    <div class="form-grupo"><label>Existe cód. de reposição?</label><select id="in-reposicao" onchange="atualizar()"><option value="NAO">NÃO</option><option value="SIM">SIM</option></select></div>
+                </div>
+                
+                <div class="form-grupo">
+                    <label>Quais itens? (Selecione os Exclusos)</label>
+                    <div id="container-quais-checkboxes" class="caixa-checkboxes">
+                        <label><input type="checkbox" value="NENHUM" onchange="atualizarQuais(this)" checked> NENHUM</label>
+                        </div>
+                </div>
+                
+                <div class="form-grupo"><label>Onde será utilizado o saldo restante?</label><input type="text" id="in-saldo" oninput="atualizar()"></div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <div class="cabecalho-secao">
+                    <legend style="color: var(--cor-primaria);">7. Configurar Envolvidos</legend>
+                    <button type="button" class="btn-add" onclick="addEnvolvido('', '')">+ Add Envolvido</button>
+                </div>
+                <div id="container-envolvidos"></div>
+            </fieldset>
+
+            <button type="button" class="btn-acao" id="btn-imprimir" onclick="window.print()">🖨️ IMPRIMIR / SALVAR PDF</button>
+        </form>
+    </div>
+
+    <div class="painel-preview">
+        <div class="folha-a4">
+            
+            <div class="cabecalho-sae">
+                <div class="cab-logo"><img src="logo.png" alt="Sodramar" onerror="this.style.display='none'"></div>
+                <div class="cab-centro">
+                    <div class="cab-setor">SETOR <span id="out-setor-emissor"></span></div>
+                    <div class="cab-titulo">SOLICITAÇÃO DE ALTERAÇÃO DE ESTRUTURA</div>
+                </div>
+                <div class="cab-dados">
+                    <div>SAE Nº: <span id="out-sae-num" style="float: right;"></span></div>
+                    <div>DATA: <span id="out-data" style="float: right;"></span></div>
+                </div>
+            </div>
+
+            <div class="bloco-solicitante-visto">
+                <div class="campo-solicitante">
+                    NOME DO SOLICITANTE: <span id="out-solicitante"></span>
+                </div>
+                <div class="campo-visto-superior">
+                    VISTO RESPONSÁVEL:
+                </div>
+            </div>
+
+            <div class="titulo-secao">PRODUTO ENVOLVIDO</div>
+            <table class="tabela-sae">
+                <thead>
+                    <tr><th>CÓDIGO</th><th class="col-desc">DESCRIÇÃO</th><th>TIPO</th><th>UNID.</th></tr>
+                </thead>
+                <tbody id="tbody-pe"></tbody>
+            </table>
+
+            <div class="titulo-secao secao-exclusao">PRODUTO QUE SERÁ EXCLUSO</div>
+            <table class="tabela-sae tabela-exclusao">
+                <thead>
+                    <tr><th rowspan="2">CÓDIGO</th><th class="col-desc" rowspan="2">DESCRIÇÃO</th><th rowspan="2">TIPO</th><th rowspan="2">UNID.</th><th rowspan="2">ESTOQUE</th><th colspan="2">QUANTIDADE</th></tr>
+                    <tr><th>S/ revisão</th><th>C/ Revisão</th></tr>
+                </thead>
+                <tbody id="tbody-ex"></tbody>
+            </table>
+
+            <div class="titulo-secao secao-inclusao">PRODUTO QUE SERÁ INCLUSO</div>
+            <table class="tabela-sae tabela-inclusao">
+                <thead>
+                    <tr><th rowspan="2">CÓDIGO</th><th class="col-desc" rowspan="2">DESCRIÇÃO</th><th rowspan="2">TIPO</th><th rowspan="2">UNID.</th><th rowspan="2">ESTOQUE</th><th colspan="2">QUANTIDADE</th></tr>
+                    <tr><th>S/ revisão</th><th>C/ Revisão</th></tr>
+                </thead>
+                <tbody id="tbody-in"></tbody>
+            </table>
+
+            <div class="caixa-motivo">
+                <div class="titulo-motivo">MOTIVO</div>
+                <div class="conteudo-motivo" id="out-motivo"></div>
+            </div>
+
+            <div class="caixa-perguntas">
+                <div class="linha-pergunta">
+                    <div class="pergunta-texto">BLOQUEAR ITENS PARA COMPRA?</div>
+                    <div>
+                        <span class="checkbox-fake" id="chk-bloq-sim"></span> SIM &nbsp;&nbsp;&nbsp;
+                        <span class="checkbox-fake" id="chk-bloq-nao"></span> NÃO
+                    </div>
+                </div>
+                <div class="linha-pergunta">
+                    <div class="pergunta-texto">QUAIS ITENS?</div>
+                    <div id="out-quais" style="border-bottom: 1px solid #000; flex-grow: 1; min-height: 14px; padding-bottom: 2px;"></div>
+                </div>
+                <div class="linha-pergunta" style="margin-top: 10px;">
+                    <div class="pergunta-texto">ONDE SERÁ UTILIZADO O SALDO RESTANTE?</div>
+                    <div id="out-saldo" style="border-bottom: 1px solid #000; flex-grow: 1; min-height: 14px;"></div>
+                </div>
+                <div class="linha-pergunta" style="margin-top: 10px;">
+                    <div class="pergunta-texto">EXISTE CÓDIGO DE REPOSIÇÃO?</div>
+                    <div>
+                        <span class="checkbox-fake" id="chk-rep-sim"></span> SIM &nbsp;&nbsp;&nbsp;
+                        <span class="checkbox-fake" id="chk-rep-nao"></span> NÃO
+                    </div>
+                </div>
+            </div>
+
+            <div class="caixa-pcp">
+                <div class="titulo-pcp">PARA PREENCHIMENTO DO PCP</div>
+                <div class="conteudo-pcp">
+                    <div style="margin-bottom: 5px;">Existe alguma operação de separação de OP em andamento? &nbsp;&nbsp; <span class="checkbox-fake"></span> SIM &nbsp;&nbsp;&nbsp; <span class="checkbox-fake"></span> NÃO</div>
+                    <div>Campo de Observações: <br><br><br></div>
+                </div>
+            </div>
+
+            <table class="tabela-sae" style="margin-top: 15px;">
+                <thead>
+                    <tr><th colspan="4" style="background-color: #d0d0d0; padding: 2px;">ENVOLVIDOS</th></tr>
+                    <tr><th width="20%">SETOR</th><th width="35%">RESPONSÁVEL</th><th width="25%">VISTO</th><th width="20%">DATA</th></tr>
+                </thead>
+                <tbody id="tbody-envolvidos">
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <script>
+        // URL da API do seu Google Apps Script
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbwR_CkY_ZL9Rw74BcEHWyt5zxH75gXBykvx8XWLzLjTgbRMehgUSdnaR9HcYiIT-zhPrA/exec";
+        let dbLocal = {};
+
+        // --- CONTROLE DE ACESSO (TRAVAR/DESTRAVAR) ---
+        function setEstadoFormulario(estadoDesabilitado) {
+            const elementos = document.querySelectorAll('#formSAE input, #formSAE select, #formSAE button, #formSAE textarea');
+            elementos.forEach(el => el.disabled = estadoDesabilitado);
+        }
+
+        // --- PRÉ-CARREGAMENTO ---
+        function carregarBancoDeDados() {
+            setEstadoFormulario(true);
+
+            const statusDiv = document.getElementById('status-db');
+            
+            fetch(URL_PLANILHA)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        statusDiv.innerText = "❌ Erro ao conectar com o banco de dados.";
+                        statusDiv.className = "status-erro";
+                    } else {
+                        dbLocal = data;
+                        statusDiv.innerText = `✅ Banco carregado (${Object.keys(dbLocal).length} itens). Formulário liberado!`;
+                        statusDiv.className = "status-ok";
+                        
+                        setEstadoFormulario(false); 
+
+                        // Linhas padroes
+                        addLinha('pe');
+                        addLinha('ex');
+                        addLinha('in');
+                        
+                        // Duas linhas Iniciais de envolvidos
+                        addEnvolvido('PRODUÇÃO', 'RUBENS GOMES');
+                        addEnvolvido('LABORATÓRIO', 'CLEITON FRANK (SOLICITADO)');
+
+                        setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+                        atualizar();
+                    }
+                })
+                .catch(error => {
+                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os produtos.";
+                    statusDiv.className = "status-erro";
+                    console.error(error);
+                });
+        }
+
+        // --- SISTEMA DE LINHAS DINÂMICAS (+ / -) PARA PRODUTOS ---
+        function addLinha(tipo) {
+            const container = document.getElementById(`container-${tipo}`);
+            const div = document.createElement('div');
+            div.className = 'linha-dinamica';
+
+            let htmlInterno = '';
+
+            if(tipo === 'pe') {
+                htmlInterno = `
+                    <button type="button" class="btn-remove" onclick="removerLinha(this)" title="Remover">-</button>
+                    <div class="linha-dinamica-conteudo">
+                        <div class="linha" style="margin-bottom: 5px;">
+                            <input type="text" class="in-cod" maxlength="5" placeholder="Cód (máx 5)" onblur="buscarProduto(this)" oninput="atualizar()" style="flex:0.6">
+                            <input type="text" class="in-tipo" placeholder="Tipo" oninput="atualizar()" style="flex:0.4">
+                            <input type="text" class="in-unid" placeholder="Unid." oninput="atualizar()" style="flex:0.4">
+                        </div>
+                        <input type="text" class="in-desc" placeholder="Descrição Automática..." oninput="atualizar()">
+                    </div>
+                `;
+            } else if (tipo === 'ex' || tipo === 'in') {
+                htmlInterno = `
+                    <button type="button" class="btn-remove" onclick="removerLinha(this)" title="Remover">-</button>
+                    <div class="linha-dinamica-conteudo">
+                        <div class="linha" style="margin-bottom: 5px;">
+                            <input type="text" class="in-cod" maxlength="5" placeholder="Cód (máx 5)" onblur="buscarProduto(this)" oninput="atualizar()">
+                            <input type="text" class="in-tipo" placeholder="Tipo" oninput="atualizar()" style="width: 60px; flex: none;">
+                            <input type="text" class="in-unid" placeholder="Unid." oninput="atualizar()" style="width: 60px; flex: none;">
+                        </div>
+                        <input type="text" class="in-desc" placeholder="Descrição Automática..." oninput="atualizar()" style="margin-bottom: 5px;">
+                        <div class="linha">
+                            <input type="text" class="in-est" placeholder="Estoque" oninput="atualizar()">
+                            <input type="text" class="in-srev" placeholder="S/ Rev" oninput="atualizar()">
+                            <input type="text" class="in-crev" placeholder="C/ Rev" oninput="atualizar()">
+                        </div>
+                    </div>
+                `;
+            }
+
+            div.innerHTML = htmlInterno;
+            container.appendChild(div);
+            atualizar();
+        }
+
+        // --- SISTEMA DE LINHAS DINÂMICAS PARA ENVOLVIDOS ---
+        function addEnvolvido(setor = '', resp = '') {
+            const container = document.getElementById('container-envolvidos');
+            const div = document.createElement('div');
+            div.className = 'linha-dinamica linha-envolvido';
+            div.innerHTML = `
+                <button type="button" class="btn-remove" onclick="removerLinha(this)" title="Remover">-</button>
+                <div class="linha-dinamica-conteudo">
+                    <div class="linha">
+                        <input type="text" class="env-setor" placeholder="Setor" value="${setor}" oninput="atualizar()" style="flex:1;">
+                        <input type="text" class="env-resp" placeholder="Nome Responsável" value="${resp}" oninput="atualizar()" style="flex:2;">
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            atualizar();
+        }
+
+        function removerLinha(btn) {
+            const linha = btn.closest('.linha-dinamica');
+            linha.remove();
+            atualizar();
+        }
+
+        // --- CONSULTA INSTANTÂNEA E LIMPEZA AO APAGAR ---
+        function buscarProduto(inputElement) {
+            let cod = inputElement.value.trim();
+            let row = inputElement.closest('.linha-dinamica');
+            if (!row) return;
+
+            let inDesc = row.querySelector('.in-desc');
+            let inTipo = row.querySelector('.in-tipo');
+            let inUnid = row.querySelector('.in-unid');
+
+            // Lógica de Limpeza: se apagou o código, zera os outros campos
+            if (cod === "") {
+                if(inDesc) inDesc.value = "";
+                if(inTipo) inTipo.value = "";
+                if(inUnid) inUnid.value = "";
+                atualizar();
+                return;
+            }
+
+            let produto = dbLocal[cod];
+            if (produto) {
+                if(inDesc) inDesc.value = produto.desc || "";
+                if(inTipo) inTipo.value = produto.tipo || "";
+                if(inUnid) inUnid.value = produto.unid || "";
+                atualizar(); 
+            }
+        }
+
+        // --- GERENCIAMENTO DE SELEÇÃO MULTIPLA DOS 'QUAIS ITENS' ---
+        function atualizarOpcoesQuais() {
+            const container = document.getElementById('container-quais-checkboxes');
+            const linhasExclusao = document.querySelectorAll('#container-ex .linha-dinamica');
+            let codigosValidos = [];
+
+            // Puxa todos os códigos digitados na tabela de Itens Exclusos
+            linhasExclusao.forEach(row => {
+                const cod = row.querySelector('.in-cod').value.trim().toUpperCase();
+                if(cod) codigosValidos.push(cod);
+            });
+
+            // Ordena os códigos para exibição nas checkboxes também!
+            codigosValidos.sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
+
+            // 1. Remove as checkboxes de códigos que não estão mais lá (exceto a NENHUM)
+            const labels = container.querySelectorAll('.label-cb-cod');
+            labels.forEach(label => {
+                const cb = label.querySelector('input');
+                if(!codigosValidos.includes(cb.value)) {
+                    label.remove();
+                }
+            });
+
+            // 2. Adiciona checkboxes para os códigos novos
+            codigosValidos.forEach(cod => {
+                let existente = container.querySelector(`input[value="${cod}"]`);
+                if(!existente) {
+                    const lbl = document.createElement('label');
+                    lbl.className = 'label-cb-cod';
+                    lbl.innerHTML = `<input type="checkbox" value="${cod}" onchange="atualizarQuais(this)"> ${cod}`;
+                    container.appendChild(lbl);
+                }
+            });
+
+            // 3. Verifica se sobrou algo marcado. Se não, marca NENHUM automaticamente.
+            const marcados = container.querySelectorAll('input[type="checkbox"]:checked');
+            if(marcados.length === 0) {
+                const cbNenhum = container.querySelector('input[value="NENHUM"]');
+                if(cbNenhum) cbNenhum.checked = true;
+            }
+        }
+
+        function atualizarQuais(clickedCb) {
+            const container = document.getElementById('container-quais-checkboxes');
+            const cbNenhum = container.querySelector('input[value="NENHUM"]');
+            const todosCbs = container.querySelectorAll('input[type="checkbox"]');
+
+            if (clickedCb.value === 'NENHUM' && clickedCb.checked) {
+                // Se clicou em NENHUM, desmarca todos os outros
+                todosCbs.forEach(cb => { if(cb !== cbNenhum) cb.checked = false; });
+            } else if (clickedCb.checked) {
+                // Se clicou em um código, desmarca o NENHUM
+                if(cbNenhum) cbNenhum.checked = false;
+            }
+
+            // Garante que NENHUM volta se tudo for desmarcado
+            const marcados = container.querySelectorAll('input[type="checkbox"]:checked');
+            if (marcados.length === 0 && cbNenhum) {
+                cbNenhum.checked = true;
+            }
+
+            atualizar();
+        }
+
+        // --- SISTEMA DE GERAÇÃO E SINCRONIZAÇÃO A4 ---
+        function getVal(id) {
+            let el = document.getElementById(id);
+            return el ? el.value.toUpperCase() : '';
+        }
+
+        function formatarData(input) {
+            let v = input.value.replace(/\D/g, ''); // Remove tudo que não for número
+            if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+            if (v.length > 5) v = v.slice(0, 5) + '/' + v.slice(5, 9);
+            input.value = v;
+            atualizar();
+        }
+
+        function setTexto(idOut, idIn) {
+            document.getElementById(idOut).innerText = getVal(idIn);
+        }
+
+        function renderizarTabela(tipoContainer, tbodyId) {
+            const rowElements = document.querySelectorAll(`#container-${tipoContainer} .linha-dinamica`);
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+
+            if(rowElements.length === 0) {
+                let cols = tipoContainer === 'pe' ? 4 : 7;
+                tbody.innerHTML = `<tr><td colspan="${cols}" style="color:#aaa;">- NENHUM ITEM ADICIONADO -</td></tr>`;
+                return;
+            }
+
+            // Transformar as linhas em um Array e ORDENAR pelo código de forma inteligente
+            // .localeCompare com {numeric: true} organiza "2" antes de "10"
+            const rowsArray = Array.from(rowElements).sort((a, b) => {
+                const codA = (a.querySelector('.in-cod').value || '').trim().toUpperCase();
+                const codB = (b.querySelector('.in-cod').value || '').trim().toUpperCase();
+                return codA.localeCompare(codB, undefined, {numeric: true});
+            });
+
+            // Iterar sobre o array agora ordenado
+            rowsArray.forEach(row => {
+                const cod = (row.querySelector('.in-cod').value || '').toUpperCase();
+                const desc = (row.querySelector('.in-desc').value || '').toUpperCase();
+                
+                let tipo = '', unid = '';
+                if(row.querySelector('.in-tipo')) tipo = row.querySelector('.in-tipo').value.toUpperCase();
+                if(row.querySelector('.in-unid')) unid = row.querySelector('.in-unid').value.toUpperCase();
+
+                let tr = document.createElement('tr');
+
+                if (tipoContainer === 'pe') {
+                    tr.innerHTML = `<td>${cod}</td><td class="col-desc">${desc}</td><td>${tipo}</td><td>${unid}</td>`;
+                } else {
+                    const est = (row.querySelector('.in-est').value || '').toUpperCase();
+                    const srev = (row.querySelector('.in-srev').value || '').toUpperCase();
+                    const crev = (row.querySelector('.in-crev').value || '').toUpperCase();
+                    tr.innerHTML = `<td>${cod}</td><td class="col-desc">${desc}</td><td>${tipo}</td><td>${unid}</td><td>${est}</td><td>${srev}</td><td>${crev}</td>`;
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function atualizar() {
+            // 1. Identificação
+            setTexto('out-setor-emissor', 'in-setor-emissor');
+            setTexto('out-sae-num', 'in-sae-num');
+            setTexto('out-data', 'in-data');
+            setTexto('out-solicitante', 'in-solicitante');
+
+            // 2, 3 e 4. Tabelas Dinâmicas (que agora são ordenadas internamente na função)
+            renderizarTabela('pe', 'tbody-pe');
+            renderizarTabela('ex', 'tbody-ex');
+            renderizarTabela('in', 'tbody-in');
+
+            // 5. Motivo
+            setTexto('out-motivo', 'in-motivo');
+
+            // 6. Questionários
+            const bloq = document.getElementById('in-bloqueio').value;
+            document.getElementById('chk-bloq-sim').innerText = bloq === 'SIM' ? 'X' : '';
+            document.getElementById('chk-bloq-nao').innerText = bloq === 'NAO' ? 'X' : '';
+
+            const rep = document.getElementById('in-reposicao').value;
+            document.getElementById('chk-rep-sim').innerText = rep === 'SIM' ? 'X' : '';
+            document.getElementById('chk-rep-nao').innerText = rep === 'NAO' ? 'X' : '';
+
+            setTexto('out-saldo', 'in-saldo');
+
+            // Atualiza caixinhas visuais do Quais Itens
+            atualizarOpcoesQuais();
+
+            // Imprime o resultado do "Quais itens" no PDF: Ex: [1453], [31931]
+            const checkboxesQuais = document.querySelectorAll('#container-quais-checkboxes input[type="checkbox"]:checked');
+            // Como as opções foram criadas ordenadas, os itens selecionados também sairão ordenados
+            let valsQuais = Array.from(checkboxesQuais).map(cb => cb.value);
+
+            if (valsQuais.includes('NENHUM') || valsQuais.length === 0) {
+                document.getElementById('out-quais').innerText = "NENHUM";
+            } else {
+                document.getElementById('out-quais').innerText = valsQuais.map(v => `[${v}]`).join(', ');
+            }
+
+            // 7. Envolvidos Rodapé
+            const tbodyEnv = document.getElementById('tbody-envolvidos');
+            tbodyEnv.innerHTML = '';
+            document.querySelectorAll('.linha-envolvido').forEach(linha => {
+                const s = linha.querySelector('.env-setor').value.toUpperCase();
+                const r = linha.querySelector('.env-resp').value.toUpperCase();
+                tbodyEnv.innerHTML += `<tr><td>${s}</td><td>${r}</td><td></td><td></td></tr>`;
+            });
+        }
+
+        // Executa carregamento na inicialização
+        window.onload = function() {
+            carregarBancoDeDados();
+            
+            // Coloca a data de hoje automaticamente se estiver vazio
+            const campoData = document.getElementById('in-data');
+            if(!campoData.value) {
+                const hoje = new Date();
+                const dia = String(hoje.getDate()).padStart(2, '0');
+                const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+                const ano = hoje.getFullYear();
+                campoData.value = `${dia}/${mes}/${ano}`;
+            }
+            atualizar();
+        };
+    </script>
+</body>
+</html>

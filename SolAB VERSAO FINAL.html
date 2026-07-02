@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha Criação de Códigos - Sodramar</title>
+    
+    <link rel="icon" href="icone.ico" type="image/png">
+    
+    <style>
+        /* --- ESTILO DO SISTEMA (TELA DE TRABALHO) --- */
+        :root {
+            --cor-primaria: #005bbb;
+            --cor-fundo: #e9ecef;
+            --cor-card: #ffffff;
+            --cor-borda: #ced4da;
+            --azul-excel: #B4C6E7;
+            --amarelo-excel: #FFF2CC;
+        }
+
+        body { font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; background-color: var(--cor-fundo); color: #333; }
+        
+        .painel-lateral { width: 450px; padding: 20px; overflow-y: auto; background-color: var(--cor-card); border-right: 1px solid var(--cor-borda); box-shadow: 2px 0 10px rgba(0,0,0,0.05); flex-shrink: 0; }
+        .painel-lateral h1 { font-size: 18px; color: var(--cor-primaria); margin-top: 0; border-bottom: 2px solid var(--cor-primaria); padding-bottom: 10px; }
+        
+        #status-db { font-size: 12px; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; background-color: #fff3cd; color: #856404; }
+        .status-ok { background-color: #d4edda !important; color: #155724 !important; border-color: #c3e6cb !important; }
+        .status-erro { background-color: #f8d7da !important; color: #721c24 !important; border-color: #f5c6cb !important; }
+
+        .form-grupo { margin-bottom: 12px; }
+        .form-grupo label { display: block; font-weight: bold; font-size: 12px; margin-bottom: 4px; color: #555; }
+        .obrigatorio::after { content: " *"; color: red; }
+        input[type="text"], input[type="file"], select, textarea { width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px; font-size: 12px; box-sizing: border-box; text-transform: uppercase; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0,91,187,0.2); }
+        
+        .linha { display: flex; gap: 10px; }
+        .linha > div { flex: 1; }
+
+        .caixa-radios { border: 1px solid var(--cor-borda); padding: 8px; border-radius: 4px; display: flex; flex-wrap: wrap; gap: 10px; background-color: #f8f9fa; }
+        .caixa-radios label { display: flex; align-items: center; gap: 5px; font-size: 11px; cursor: pointer; }
+
+        .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; transition: 0.2s; }
+        .btn-acao:hover { background-color: #218838; }
+
+        .container-similares { margin-top: 10px; padding: 10px; background-color: #e9ecef; border-radius: 5px; border: 1px solid #adb5bd; display: none; max-height: 200px; overflow-y: auto; }
+        .sugestao-item { background: #fff; color: #333; padding: 8px; font-size: 11px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; margin-bottom: 5px; text-align: left; transition: 0.2s; }
+        .sugestao-item:hover { background: var(--cor-primaria); color: white; border-color: var(--cor-primaria); }
+
+        .painel-preview { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; justify-content: center; background-color: #525659; }
+        .folha-a4 {
+            width: 210mm; min-height: 297mm; background-color: white; padding: 10mm 15mm; box-sizing: border-box; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            font-family: Arial, sans-serif; color: #000; font-size: 11px; position: relative;
+        }
+
+        .logo-container { width: 100%; text-align: center; margin-bottom: 5mm; height: 50px; display: flex; justify-content: center; align-items: center; }
+        .logo-empresa { max-height: 45px; object-fit: contain; } 
+
+        table.tbl-excel { width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; margin-bottom: 0px; table-layout: fixed; }
+        table.tbl-excel th, table.tbl-excel td { border: 1px solid #000; padding: 4px; text-transform: uppercase; vertical-align: middle; word-wrap: break-word; }
+        
+        .cab-azul { background-color: var(--azul-excel); font-weight: bold; }
+        .cel-amarela { background-color: var(--amarelo-excel); font-weight: bold; font-size: 12px; text-align: center; color: #000; }
+        .cel-preta { background-color: #000; color: #fff; font-weight: bold; letter-spacing: 1px; font-size: 12px; }
+
+        .area-imagem { width: 100%; height: 110px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 2px; }
+        .area-imagem img { max-width: 100%; max-height: 110px; display: none; object-fit: contain; }
+
+        @media print {
+            body { background: none; margin: 0; padding: 0; }
+            .painel-lateral { display: none; }
+            .painel-preview { display: block; padding: 0; overflow: visible; background: none; }
+            .folha-a4 { box-shadow: none; margin: 0; padding: 10mm; width: 100%; min-height: 100vh; }
+            .cab-azul { background-color: var(--azul-excel) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cel-amarela { background-color: var(--amarelo-excel) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cel-preta { background-color: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { size: A4; margin: 5mm; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="painel-lateral">
+        <h1>Ficha de Criação de Códigos</h1>
+        <div id="status-db">⏳ Conectando à base de dados...</div>
+
+        <form id="formFicha">
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">1. Identificação</legend>
+                <div class="form-grupo"><label class="obrigatorio">Solicitante</label><input type="text" id="in-solicitante" value="" oninput="atualizar()"></div>
+                
+                <div class="linha">
+                    <div class="form-grupo"><label class="obrigatorio">Departamento</label><input type="text" id="in-departamento" value="" oninput="atualizar()"></div>
+                    <div class="form-grupo"><label class="obrigatorio">Processo Nº</label><input type="text" id="in-processo" oninput="atualizar()"></div>
+                </div>
+
+                <div class="linha">
+                    <div class="form-grupo"><label class="obrigatorio">Data</label><input type="text" id="in-data" placeholder="DD/MM/AAAA" oninput="atualizar()"></div>
+                    <div class="form-grupo"><label class="obrigatorio">Imagem do Produto</label><input type="file" id="in-imagem" accept="image/*" onchange="carregarImagem(event)"></div>
+                </div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #e0c800; padding: 10px; border-radius: 5px; margin-bottom: 15px; background-color: #fffdf2;">
+                <legend style="font-weight: bold; font-size: 12px; color: #856404;">2. Produto</legend>
+                
+                <div class="form-grupo">
+                    <label class="obrigatorio">Descrição <span style="color:#d9534f; font-weight:normal;">(Máx. 40 caract.)</span></label>
+                    <input type="text" id="in-desc" maxlength="40" oninput="calcularCaracteres()">
+                </div>
+
+                <div class="linha">
+                    <div class="form-grupo">
+                        <label class="obrigatorio">Tipo</label>
+                        <select id="in-tipo" onchange="atualizar(); verificarRegrasTipo();">
+                            <option value=""></option>
+                            <option value="IP">IP</option>
+                            <option value="MC">MC</option>
+                            <option value="MP">MP</option>
+                            <option value="PA">PA</option>
+                            <option value="PE">PE</option>
+                            <option value="RP">RP</option>
+                            <option value="ST">ST</option>
+                            <option value="SI">SI</option>
+                        </select>
+                    </div>
+                    <div class="form-grupo"><label>Caract.</label><input type="text" id="in-caract" readonly style="background:#e9ecef;"></div>
+                    <div class="form-grupo">
+                        <label class="obrigatorio">Unidade</label>
+                        <select id="in-unid" onchange="atualizar()">
+                            <option value=""></option>
+                            <option value="AR">AR</option><option value="BB">BB</option><option value="BD">BD</option>
+                            <option value="BL">BL</option><option value="BR">BR</option><option value="CA">CA</option>
+                            <option value="CJ">CJ</option><option value="CT">CT</option><option value="CX">CX</option>
+                            <option value="FD">FD</option><option value="FL">FL</option><option value="GL">GL</option>
+                            <option value="HR">HR</option><option value="JG">JG</option><option value="KG">KG</option>
+                            <option value="KM">KM</option><option value="L">L</option><option value="LT">LT</option>
+                            <option value="M²">M²</option><option value="M³">M³</option><option value="MI">MI</option>
+                            <option value="ML">ML</option><option value="MH">MH</option><option value="MT">MT</option>
+                            <option value="PC">PC</option><option value="PR">PR</option><option value="PT">PT</option>
+                            <option value="RL">RL</option><option value="SC">SC</option><option value="TB">TB</option>
+                            <option value="TL">TL</option><option value="UN">UN</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="linha">
+                    <div class="form-grupo"><label id="lbl-pbruto">Peso Bruto</label><input type="text" id="in-pbruto" onblur="formatarPeso(this)" oninput="atualizar()"></div>
+                    <div class="form-grupo"><label id="lbl-pliquido">Peso Líquido</label><input type="text" id="in-pliquido" onblur="formatarPeso(this)" oninput="atualizar()"></div>
+                    <div class="form-grupo">
+                        <label class="obrigatorio">Origem</label>
+                        <select id="in-origem" onchange="atualizar()">
+                            <option value=""></option>
+                            <option value="0">0 (Nacional)</option>
+                            <option value="1">1 (Importado)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grupo">
+                    <label class="obrigatorio">Empresa Cadastrada</label>
+                    <div class="caixa-radios">
+                        <label><input type="radio" name="empresa" value="SODRAMAR" onchange="atualizar()" checked> Sodramar</label>
+                        <label><input type="radio" name="empresa" value="FILTER UP" onchange="atualizar()"> Filter Up</label>
+                        <label><input type="radio" name="empresa" value="WELD STEAM" onchange="atualizar()"> Weld Steam</label>
+                        <label><input type="radio" name="empresa" value="SDR" onchange="atualizar()"> SDR</label>
+                    </div>
+                </div>
+
+                <div class="linha">
+                    <div class="form-grupo" style="flex: 2;">
+                        <label class="obrigatorio">NCM (Busca Automática)</label>
+                        <input type="text" id="in-ncm" placeholder="Digite apenas o NCM..." onkeyup="buscarNCM()" oninput="atualizar()">
+                    </div>
+                    <div class="form-grupo"><label>IPI</label><input type="text" id="in-ipi" oninput="atualizar()"></div>
+                    <div class="form-grupo"><label>ST</label><input type="text" id="in-st" oninput="atualizar()"></div>
+                </div>
+                
+                <div class="form-grupo"><label class="obrigatorio">Descrição NCM</label><input type="text" id="in-descncm" oninput="atualizar()"></div>
+
+                <div id="container-similares" class="container-similares">
+                    <label style="font-size: 11px; color: #495057; margin-bottom: 5px; display: block;">🔍 Códigos Similares por NCM (Clique para usar):</label>
+                    <div id="lista-opcoes-ncm"></div>
+                </div>
+
+                <div class="linha" style="margin-top: 10px;">
+                    <div class="form-grupo"><label>Cód. Similar</label><input type="text" id="in-codsim" oninput="atualizar()"></div>
+                    <div class="form-grupo"><label>NCM - Cód. Similar</label><input type="text" id="in-ncmsim" readonly style="background:#e9ecef;" oninput="atualizar()"></div>
+                </div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">3. Processo</legend>
+                <div class="form-grupo">
+                    <label class="obrigatorio">Motivo da Criação</label>
+                    <textarea id="in-motivo" rows="2" oninput="atualizar()" placeholder="TENTE DETALHAR..."></textarea>
+                </div>
+            </fieldset>
+
+            <button type="button" class="btn-acao" onclick="validarEImprimir()">🖨️ VALIDAR E IMPRIMIR PDF</button>
+        </form>
+    </div>
+
+    <div class="painel-preview">
+        <div class="folha-a4">
+            
+            <div class="logo-container">
+                <img src="logo.png" class="logo-empresa" onerror="this.style.display='none'" alt="Sodramar">
+            </div>
+
+            <table class="tbl-excel">
+                <tr>
+                    <th colspan="2" class="cab-azul" style="font-size: 16px; padding: 8px;">FICHA PARA CRIAÇÃO DE CÓDIGOS</th>
+                    <th class="cab-azul" width="15%">PROCESSO</th>
+                    <th class="cel-amarela" id="out-processo" width="15%" style="font-size: 16px;"></th>
+                </tr>
+                <tr>
+                    <th class="cab-azul" width="25%">SOLICITANTE</th>
+                    <th class="cab-azul" width="25%">DEPARTAMENTO</th>
+                    <th class="cab-azul" width="25%">CÓDIGO CADASTRADO</th>
+                    <th class="cab-azul" width="25%">DATA</th>
+                </tr>
+                <tr>
+                    <td class="cel-amarela" id="out-solicitante" style="height: 20px;"></td>
+                    <td class="cel-amarela" id="out-departamento"></td>
+                    <td style="background:#fff;"></td>
+                    <td class="cel-amarela" id="out-data"></td>
+                </tr>
+                <tr><td colspan="4" style="border: none; height: 5px;"></td></tr>
+                <tr><td colspan="4" class="cel-preta">CAMPOS OBRIGATÓRIOS (SOLICITANTE)</td></tr>
+            </table>
+
+            <table class="tbl-excel" style="margin-top: -1px;">
+                <tr>
+                    <th class="cab-azul" width="25%">IMAGEM DO PRODUTO</th>
+                    <th class="cab-azul" colspan="4" width="60%">DESCRIÇÃO</th>
+                    <th class="cab-azul" width="15%">CARACT.</th>
+                </tr>
+                <tr>
+                    <td rowspan="4" style="vertical-align: middle; padding: 5px;">
+                        <div class="area-imagem">
+                            <span id="img-placeholder" style="color:#aaa; font-weight:bold; font-size:10px;">IMAGEM</span>
+                            <img id="out-img" src="">
+                        </div>
+                    </td>
+                    <td class="cel-amarela" colspan="4" id="out-desc" style="height: 30px;"></td>
+                    <td class="cel-amarela" id="out-caract" style="font-size: 16px;"></td>
+                </tr>
+                <tr>
+                    <th class="cab-azul" width="15%" rowspan="2">TIPO</th>
+                    <th class="cab-azul" width="15%" rowspan="2">ORIGEM</th>
+                    <th class="cab-azul" colspan="2" width="30%">PESO</th>
+                    <th class="cab-azul" width="15%" rowspan="2">UNIDADE</th>
+                </tr>
+                <tr>
+                    <th class="cab-azul" width="15%">BRUTO</th>
+                    <th class="cab-azul" width="15%">LIQUÍDO</th>
+                </tr>
+                <tr>
+                    <td class="cel-amarela" id="out-tipo" style="height: 25px;"></td>
+                    <td class="cel-amarela" id="out-origem"></td>
+                    <td class="cel-amarela" id="out-pbruto"></td>
+                    <td class="cel-amarela" id="out-pliquido"></td>
+                    <td class="cel-amarela" id="out-unid"></td>
+                </tr>
+            </table>
+
+            <table class="tbl-excel" style="margin-top: -1px;">
+                <tr><th colspan="8" class="cel-preta">EMPRESA CADASTRADA</th></tr>
+                <tr>
+                    <th class="cab-azul" width="15%">SODRAMAR</th>
+                    <td class="cel-amarela" id="out-sod" width="10%"></td>
+                    <th class="cab-azul" width="15%">FILTER UP</th>
+                    <td class="cel-amarela" id="out-fil" width="10%"></td>
+                    <th class="cab-azul" width="15%">WELD STEAM</th>
+                    <td class="cel-amarela" id="out-wel" width="10%"></td>
+                    <th class="cab-azul" width="15%">SDR</th>
+                    <td class="cel-amarela" id="out-sdr" width="10%"></td>
+                </tr>
+            </table>
+
+            <table class="tbl-excel" style="margin-top: -1px;">
+                <tr>
+                    <th class="cab-azul" width="40%">NCM</th>
+                    <th class="cab-azul" width="20%">IPI</th>
+                    <th class="cab-azul" width="40%">ST</th>
+                </tr>
+                <tr>
+                    <td class="cel-amarela" id="out-ncm" style="height: 20px;"></td>
+                    <td class="cel-amarela" id="out-ipi"></td>
+                    <td class="cel-amarela" id="out-st"></td>
+                </tr>
+                <tr><th colspan="3" class="cab-azul">DESCRIÇÃO NCM</th></tr>
+                <tr><td colspan="3" class="cel-amarela" id="out-descncm" style="height: 20px;"></td></tr>
+            </table>
+
+            <table class="tbl-excel" style="margin-top: -1px;">
+                <tr>
+                    <th class="cab-azul" width="30%">CÓDIGO SIMILAR</th>
+                    <th class="cab-azul" width="70%">NCM - CÓDIGO SIMILAR</th>
+                </tr>
+                <tr>
+                    <td class="cel-amarela" id="out-codsim" style="height: 20px;"></td>
+                    <td class="cel-amarela" id="out-ncmsim"></td>
+                </tr>
+                <tr><td colspan="2" style="border: none; font-weight: bold; background-color: #fff; color: #ff0000; font-size: 10px; padding: 4px; text-align: center;">**CAMPOS EM AMARELO É OBRIGATÓRIO O PREENCHIMENTO DO SOLICITANTE**</td></tr>
+            </table>
+
+            <table class="tbl-excel" style="margin-top: 0px;">
+                <tr><th class="cab-azul">MOTIVO PELA CRIAÇÃO DO CÓDIGO (TENTE DETALHAR)</th></tr>
+                <tr><td class="cel-amarela" id="out-motivo" style="height: 35px; vertical-align: middle;"></td></tr>
+            </table>
+
+            <table class="tbl-excel" style="margin-top: 8px; table-layout: fixed;">
+                <thead>
+                    <tr><th colspan="8" class="cab-azul">INFORMAÇÕES ADICIONAIS</th></tr>
+                </thead>
+                <tbody>
+                    <tr style="height: 35px;">
+                        <th class="cab-azul" colspan="2" style="width: 25%;">ARMAZEM PADRÃO</th>
+                        <td colspan="2" style="width: 25%; background-color: #ffffff;"></td>
+                        <th class="cab-azul" colspan="2" style="width: 25%;">CONT. ENDEREÇO</th>
+                        <td colspan="2" style="width: 25%; background-color: #ffffff;"></td>
+                    </tr>
+                    <tr style="height: 35px;">
+                        <th class="cab-azul" colspan="2">CONTA CONTÁBIL</th>
+                        <td colspan="2" style="background-color: #ffffff;"></td>
+                        <th class="cab-azul" colspan="1" style="width: 12.5%;">DESC.</th>
+                        <td colspan="3" style="width: 37.5%; background-color: #ffffff;"></td>
+                    </tr>
+                    <tr style="height: 35px;">
+                        <th class="cab-azul" colspan="2">CENTRO/CUSTO</th>
+                        <td colspan="2" style="background-color: #ffffff;"></td>
+                        <th class="cab-azul" colspan="1">DESC.</th>
+                        <td colspan="3" style="background-color: #ffffff;"></td>
+                    </tr>
+                    <tr style="height: 35px;">
+                        <th class="cab-azul" colspan="2">TES ENTRADA</th>
+                        <td colspan="2" style="background-color: #ffffff;"></td>
+                        <th class="cab-azul" colspan="2">TES SAÍDA</th>
+                        <td colspan="2" style="background-color: #ffffff;"></td>
+                    </tr>
+                    <tr style="height: 35px;">
+                        <th class="cab-azul" colspan="2">NCM FINAL</th>
+                        <td colspan="2" style="background-color: #ffffff;"></td>
+                        <th class="cab-azul" colspan="2">SDR</th>
+                        <td colspan="2" style="background-color: #ffffff;"></td>
+                    </tr>
+                    <tr style="height: 35px;">
+                        <th class="cab-azul" colspan="2">% IPI</th>
+                        <td colspan="2" style="background-color: #ffffff;"></td>
+                        <th class="cab-azul" colspan="2">% ICMS</th>
+                        <td colspan="2" style="background-color: #ffffff;"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <table class="tbl-excel" style="margin-top: 8px; table-layout: fixed;">
+                <tr><th colspan="40" class="cel-preta">DESCRIÇÃO FINAL</th></tr>
+                <tr style="height: 25px;">
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                </tr>
+            </table>
+
+            <table class="tbl-excel" style="margin-top: 8px;">
+                <tr><th colspan="6" class="cab-azul">APROVAÇÕES (RESPONSÁVEIS)</th></tr>
+                <tr>
+                    <th class="cab-azul" width="16.6%">CADASTRO</th>
+                    <th class="cab-azul" width="16.6%">CONTROLADORIA</th>
+                    <th class="cab-azul" width="16.6%">PCP</th>
+                    <th class="cab-azul" width="16.6%">FISCAL</th>
+                    <th class="cab-azul" width="16.6%">DIRETORIA</th>
+                    <th class="cab-azul" width="17%">RESPONSÁVEL</th>
+                </tr>
+                <tr>
+                    <td style="height: 40px;"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbxg31ghH-Xb2XcgcxHrhZPt2ATFh79B4ekd7CE4WtRGFCZEcYbGmPojK-hmyCxlASwd/exec";
+        
+        let dbLocal = [];
+
+        function carregarBancoDeDados() {
+            const statusDiv = document.getElementById('status-db');
+            fetch(URL_PLANILHA)
+                .then(r => r.json())
+                .then(data => {
+                    dbLocal = [];
+                    for (let i = 0; i < data.length; i++) {
+                        dbLocal.push({
+                            codigo: data[i].codigo,
+                            desc: data[i].descricao,
+                            ncm: data[i].ncm,
+                            descNcm: data[i].desc_ncm
+                        });
+                    }
+                    
+                    statusDiv.innerText = `✅ Banco de dados conectado (${dbLocal.length} registros).`;
+                    statusDiv.className = "status-ok";
+                    setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+                }).catch(e => {
+                    console.error(e);
+                    statusDiv.innerText = "❌ Erro ao conectar. Verifique a URL do script.";
+                    statusDiv.className = "status-erro";
+                });
+        }
+
+        function calcularCaracteres() {
+            const desc = document.getElementById('in-desc').value;
+            document.getElementById('in-caract').value = desc.length;
+            atualizar();
+        }
+
+        function formatarPeso(el) {
+            let val = el.value.replace(/kg/i, '').trim();
+            if(val) el.value = val + " KG";
+            atualizar();
+        }
+
+        function formatarNCMStr(val) {
+            let limpo = val.replace(/[^0-9]/g, "");
+            if (limpo.length === 8) {
+                return limpo.substring(0, 4) + "." + limpo.substring(4, 6) + "." + limpo.substring(6, 8);
+            }
+            return val.toUpperCase();
+        }
+
+        function verificarRegrasTipo() {
+            let tipo = document.getElementById('in-tipo').value;
+            let lblBruto = document.getElementById('lbl-pbruto');
+            let lblLiquido = document.getElementById('lbl-pliquido');
+            
+            if (tipo === 'PA' || tipo === 'RP') {
+                lblBruto.classList.add('obrigatorio');
+                lblLiquido.classList.add('obrigatorio');
+            } else {
+                lblBruto.classList.remove('obrigatorio');
+                lblLiquido.classList.remove('obrigatorio');
+            }
+        }
+
+        function carregarImagem(e) {
+            const file = e.target.files[0];
+            const img = document.getElementById('out-img');
+            const placeholder = document.getElementById('img-placeholder');
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = ev => { img.src = ev.target.result; img.style.display = 'block'; placeholder.style.display = 'none'; }
+                reader.readAsDataURL(file);
+            } else {
+                img.style.display = 'none'; placeholder.style.display = 'block';
+            }
+        }
+
+        function buscarNCM() {
+            let termoNCM = document.getElementById('in-ncm').value.trim();
+            const containerSimilares = document.getElementById('container-similares');
+            const listaDiv = document.getElementById('lista-opcoes-ncm');
+            
+            let termoLimpo = termoNCM.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+
+            if (termoLimpo === "") {
+                document.getElementById('in-descncm').value = "";
+                document.getElementById('in-codsim').value = "";
+                document.getElementById('in-ncmsim').value = "";
+                containerSimilares.style.display = 'none';
+                atualizar();
+                return;
+            }
+
+            if (termoLimpo.length < 2 || dbLocal.length === 0) {
+                containerSimilares.style.display = 'none';
+                return;
+            }
+
+            let opcoesHTML = "";
+            let contagem = 0;
+            let descricaoExata = "";
+
+            for (let i = 0; i < dbLocal.length; i++) {
+                let p = dbLocal[i];
+                let ncmStr = String(p.ncm || "");
+                let ncmLimpoPlanilha = ncmStr.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+
+                if (!ncmLimpoPlanilha) continue;
+
+                if (ncmLimpoPlanilha === termoLimpo && p.descNcm && !descricaoExata) {
+                    descricaoExata = p.descNcm;
+                }
+
+                if (ncmLimpoPlanilha.startsWith(termoLimpo)) {
+                    let descSafe = String(p.desc || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    let descNcmSafe = String(p.descNcm || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    
+                    opcoesHTML += `<div class="sugestao-item" onclick="selecionarSimilar('${p.codigo}', '${ncmStr}', '${descNcmSafe}')">
+                                    <b>Cód: ${p.codigo}</b> | NCM: <span style="color:#005bbb;">${formatarNCMStr(ncmStr)}</span><br>
+                                    <span style="color:#555; font-size:10px;">${descSafe}</span>
+                                   </div>`;
+                    contagem++;
+                }
+
+                if (contagem >= 15 && descricaoExata) break; 
+            }
+
+            if (descricaoExata) {
+                document.getElementById('in-descncm').value = descricaoExata;
+            }
+
+            if (opcoesHTML !== "") {
+                listaDiv.innerHTML = opcoesHTML;
+                containerSimilares.style.display = 'block';
+            } else {
+                listaDiv.innerHTML = "<div style='font-size:11px; padding:5px;'>Nenhum NCM similar encontrado na base.</div>";
+                containerSimilares.style.display = 'block';
+            }
+            
+            atualizar();
+        }
+
+        function selecionarSimilar(codSelecionado, ncmSelecionado, descNcmSelecionada) {
+            document.getElementById('in-codsim').value = codSelecionado;
+            document.getElementById('in-ncmsim').value = formatarNCMStr(ncmSelecionado); 
+            document.getElementById('in-ncm').value = formatarNCMStr(ncmSelecionado);
+            
+            if (descNcmSelecionada && descNcmSelecionada !== "undefined") {
+                document.getElementById('in-descncm').value = descNcmSelecionada;
+            }
+            document.getElementById('container-similares').style.display = 'none';
+            atualizar();
+        }
+
+        function validarEImprimir() {
+            const obrigatorios = [
+                { id: 'in-solicitante', nome: 'Solicitante' },
+                { id: 'in-departamento', nome: 'Departamento' },
+                { id: 'in-processo', nome: 'Processo Nº' },
+                { id: 'in-data', nome: 'Data' },
+                { id: 'in-imagem', nome: 'Imagem do Produto' },
+                { id: 'in-desc', nome: 'Descrição' },
+                { id: 'in-tipo', nome: 'Tipo' },
+                { id: 'in-unid', nome: 'Unidade' },
+                { id: 'in-origem', nome: 'Origem' },
+                { id: 'in-ncm', nome: 'NCM' },
+                { id: 'in-descncm', nome: 'Descrição NCM' },
+                { id: 'in-motivo', nome: 'Motivo da Criação' }
+            ];
+
+            let camposFaltantes = [];
+            for (let campo of obrigatorios) {
+                let elemento = document.getElementById(campo.id);
+                if (elemento.type === 'file') {
+                    if (elemento.files.length === 0) camposFaltantes.push(campo.nome);
+                } else if (!elemento || elemento.value.trim() === "") {
+                    camposFaltantes.push(campo.nome);
+                }
+            }
+
+            let tipo = document.getElementById('in-tipo').value;
+            if (tipo === 'PA' || tipo === 'RP') {
+                if (!document.getElementById('in-pbruto').value.trim()) camposFaltantes.push('Peso Bruto');
+                if (!document.getElementById('in-pliquido').value.trim()) camposFaltantes.push('Peso Líquido');
+            }
+
+            if (camposFaltantes.length > 0) {
+                alert("⛔ ERRO - IMPRESSÃO BLOQUEADA\n\nPor favor, preencha os seguintes campos obrigatórios:\n\n- " + camposFaltantes.join("\n- "));
+                return;
+            }
+
+            let processo = document.getElementById('in-processo').value.trim().toUpperCase();
+            let descricao = document.getElementById('in-desc').value.trim().toUpperCase();
+            let tituloOriginal = document.title;
+
+            document.title = "Sol.Ab " + processo + " " + descricao;
+
+            window.print();
+
+            setTimeout(() => {
+                document.title = tituloOriginal;
+            }, 1000);
+        }
+
+        function getVal(id) { let el = document.getElementById(id); return el ? el.value.toUpperCase() : ''; }
+        function setTexto(idOut, idIn) { document.getElementById(idOut).innerText = getVal(idIn); }
+
+        function atualizar() {
+            setTexto('out-solicitante', 'in-solicitante');
+            setTexto('out-departamento', 'in-departamento');
+            setTexto('out-processo', 'in-processo');
+            setTexto('out-data', 'in-data');
+            setTexto('out-desc', 'in-desc');
+            setTexto('out-caract', 'in-caract');
+            setTexto('out-tipo', 'in-tipo');
+            setTexto('out-unid', 'in-unid');
+            
+            let origemSelect = document.getElementById('in-origem');
+            if(origemSelect.selectedIndex > 0) {
+                document.getElementById('out-origem').innerText = origemSelect.options[origemSelect.selectedIndex].text.split(' ')[0];
+            } else {
+                document.getElementById('out-origem').innerText = "";
+            }
+            
+            setTexto('out-pbruto', 'in-pbruto');
+            setTexto('out-pliquido', 'in-pliquido');
+
+            const radios = document.getElementsByName('empresa');
+            let emp = "";
+            for (let r of radios) { if (r.checked) emp = r.value; }
+            document.getElementById('out-sod').innerText = emp === "SODRAMAR" ? "X" : "";
+            document.getElementById('out-fil').innerText = emp === "FILTER UP" ? "X" : "";
+            document.getElementById('out-wel').innerText = emp === "WELD STEAM" ? "X" : "";
+            document.getElementById('out-sdr').innerText = emp === "SDR" ? "X" : "";
+
+            document.getElementById('out-ncm').innerText = formatarNCMStr(getVal('in-ncm'));
+            
+            setTexto('out-ipi', 'in-ipi');
+            setTexto('out-st', 'in-st');
+            setTexto('out-descncm', 'in-descncm');
+            setTexto('out-codsim', 'in-codsim');
+            
+            document.getElementById('out-ncmsim').innerText = formatarNCMStr(getVal('in-ncmsim'));
+            
+            setTexto('out-motivo', 'in-motivo');
+        }
+
+        window.onload = function() {
+            carregarBancoDeDados();
+            verificarRegrasTipo();
+            atualizar();
+        };
+    </script>
+</body>
+</html>

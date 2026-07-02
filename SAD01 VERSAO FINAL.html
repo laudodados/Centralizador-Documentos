@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <link rel="icon" type="image/x-icon" href="./icone.ico">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de SAD - Sodramar</title>
+    <style>
+        /* --- ESTILO DO SISTEMA (TELA DE TRABALHO) --- */
+        :root {
+            --cor-primaria: #005bbb;
+            --cor-fundo: #e9ecef;
+            --cor-card: #ffffff;
+            --cor-borda: #ced4da;
+            --cor-destaque: #e0e0e0; 
+        }
+
+        body { font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; background-color: var(--cor-fundo); color: #333; }
+        
+        .painel-lateral { width: 500px; padding: 20px; overflow-y: auto; background-color: var(--cor-card); border-right: 1px solid var(--cor-borda); box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        .painel-lateral h1 { font-size: 18px; color: var(--cor-primaria); margin-top: 0; border-bottom: 2px solid var(--cor-primaria); padding-bottom: 10px; }
+        
+        #status-db { font-size: 12px; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .status-ok { background-color: #d4edda !important; color: #155724 !important; border-color: #c3e6cb !important; }
+        .status-erro { background-color: #f8d7da !important; color: #721c24 !important; border-color: #f5c6cb !important; }
+
+        .form-grupo { margin-bottom: 12px; }
+        .form-grupo label { display: block; font-weight: bold; font-size: 12px; margin-bottom: 4px; color: #555; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px; font-size: 12px; box-sizing: border-box; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0,91,187,0.2); }
+        
+        input:disabled, select:disabled, button:disabled, textarea:disabled { background-color: #e9ecef; cursor: not-allowed; opacity: 0.7; }
+
+        .linha { display: flex; gap: 10px; }
+        .linha > div { flex: 1; }
+
+        .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
+        .btn-acao:hover:not(:disabled) { background-color: #218838; }
+
+        .cabecalho-secao { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
+        .cabecalho-secao legend { font-weight: bold; font-size: 12px; color: var(--cor-primaria); margin: 0; padding: 0; border: none; }
+        
+        .btn-add { background-color: #005bbb; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-add:hover:not(:disabled) { background-color: #004494; }
+        .btn-remove { background-color: #dc3545; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 14px; font-weight: bold; cursor: pointer; height: 100%; display: flex; align-items: center; justify-content: center; width: 35px; }
+        .btn-remove:hover:not(:disabled) { background-color: #c82333; }
+
+        .linha-dinamica { border: 1px solid #ddd; padding: 8px; border-radius: 5px; margin-bottom: 8px; background-color: #fff; position: relative; display: flex; gap: 8px; flex-direction: column;}
+        .linha-dinamica .btn-remove { position: absolute; right: 8px; top: 8px; padding: 4px; width: 25px; height: 25px; }
+        .linha-dinamica-conteudo { padding-right: 35px; display: flex; flex-direction: column; gap: 5px;} 
+
+        /* --- ESTILO DA FOLHA DE IMPRESSÃO (A4 RESTRITO) --- */
+        .painel-preview { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; justify-content: flex-start; background-color: #525659; flex-direction: column; align-items: center; gap: 20px;}
+        
+        .folha-a4 {
+            width: 210mm; min-height: 297mm; padding: 10mm 15mm; box-sizing: border-box; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            font-family: Arial, sans-serif; color: #000; font-size: 11px; display: flex; flex-direction: column;
+            background-color: white;
+        }
+
+        /* Estrutura SAD - Igual ao PDF fornecido */
+        table.tabela-sad { width: 100%; border-collapse: collapse; margin-bottom: 0px; text-align: center; }
+        table.tabela-sad th, table.tabela-sad td { border: 1px solid #000; padding: 4px; text-transform: uppercase; }
+        table.tabela-sad th { background-color: #fff; font-size: 10px; }
+        table.tabela-sad td { font-size: 11px; height: 20px; word-break: break-word; vertical-align: middle; }
+        
+        .titulo-faixa { background-color: #e0e0e0 !important; font-weight: bold; font-style: italic; text-align: center; font-size: 11px; padding: 4px; border: 1px solid #000; border-bottom: none; text-transform: uppercase; }
+        .sub-faixa { background-color: #fce4d6 !important; font-weight: bold; text-align: center; font-size: 11px; padding: 4px; border: 1px solid #000; border-bottom: none; border-top: none; text-transform: uppercase;} 
+        .sub-faixa-amarela { background-color: #fff2cc !important; font-weight: bold; text-align: center; font-size: 11px; padding: 4px; border: 1px solid #000; border-bottom: none; border-top: none; text-transform: uppercase;} 
+
+        /* Cabeçalho Superior */
+        .cabecalho-sad { display: flex; width: 100%; border: 1px solid #000; border-bottom: none; }
+        .cab-logo { width: 25%; padding: 5px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center; }
+        .cab-logo img { max-width: 100px; max-height: 40px; }
+        .cab-titulo { width: 60%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 22px; text-align: center; border-right: 1px solid #000; padding: 10px; }
+        .cab-numero { width: 15%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; flex-direction: column;}
+        .cab-numero span { color: red; font-size: 14px;}
+
+        /* Colunas Específicas */
+        .col-codigo { width: 15%; }
+        .col-desc { text-align: left; width: 35%; }
+        .col-alt { text-align: left; width: 50%; white-space: pre-wrap;}
+        
+        /* Ajuste Altura Tabelas */
+        #tbody-envolvidos td { height: 45px; }
+        #tbody-conseq td, #tbody-ppcp td { height: 30px; } 
+
+        .espaco { margin-bottom: 8px; }
+        .rodape-obs { font-size: 9px; text-align: center; font-weight: bold; margin-top: auto; border: 1px solid #000; padding: 3px;}
+
+        /* --- CONFIGURAÇÕES PARA IMPRESSÃO CORRIGIDAS (Evita 4 páginas) --- */
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            body, html { background: none; margin: 0; padding: 0; height: auto; }
+            .painel-lateral { display: none !important; }
+            .painel-preview { display: block; padding: 0; overflow: visible; background: none; gap: 0; }
+            
+            /* Zera min-height e paddings para usar apenas a margem do @page */
+            .folha-a4 { 
+                box-shadow: none; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                width: 100%; 
+                height: auto !important;
+                min-height: 0 !important; 
+                display: block !important; 
+                background: #ffffff !important; 
+            }
+            
+            .folha-anexo { page-break-before: always; margin-top: 0 !important; }
+            
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            .titulo-faixa, .sub-faixa, .sub-faixa-amarela { page-break-inside: avoid; }
+
+            .titulo-faixa { background-color: #e0e0e0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .sub-faixa { background-color: #fce4d6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .sub-faixa-amarela { background-color: #fff2cc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cab-numero span { color: red !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="painel-lateral">
+        <h1>Gerador de SAD <button type="button" onclick="carregarBancoDeDados(true)" style="float: right; font-size: 12px; cursor: pointer; padding: 4px; border-radius: 4px; border: 1px solid #ccc; background: #fff; color: #333;">🔄 Atualizar Banco</button></h1>
+        
+        <div id="status-db">⏳ Conectando à base de dados...</div>
+
+        <form id="formSAD">
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">1. Identificação</legend>
+                
+                <div class="linha">
+                    <div class="form-grupo"><label>SAD Nº</label><input type="text" id="in-sad-num" oninput="atualizar()" placeholder="Ex: 14_26"></div>
+                    <div class="form-grupo"><label>Data</label><input type="text" id="in-data" oninput="formatarData(this)" placeholder="DD/MM/AAAA" maxlength="10"></div>
+                </div>
+                <div class="linha">
+                    <div class="form-grupo">
+                        <label>Setor Solicitante</label>
+                        <select id="in-setor" onchange="atualizar()">
+                            <option value="">Selecione...</option>
+                            <option value="DESENVOLVIMENTO">DESENVOLVIMENTO</option>
+                            <option value="PRODUÇÃO">PRODUÇÃO</option>
+                            <option value="PCP">PCP</option>
+                            <option value="ENGENHARIA">ENGENHARIA</option>
+                            <option value="QUALIDADE">QUALIDADE</option>
+                            <option value="ASSISTÊNCIA">ASSISTÊNCIA</option>
+                        </select>
+                    </div>
+                    <div class="form-grupo"><label>Nome do Responsável</label><input type="text" id="in-solicitante" oninput="atualizar()" value=""></div>
+                </div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">2. Motivo da Alteração</legend>
+                <div class="form-grupo">
+                    <textarea id="in-motivo" rows="3" oninput="atualizar()" placeholder="Descreva o motivo da alteração..."></textarea>
+                </div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <div class="cabecalho-secao">
+                    <legend>3. Desenhos a serem alterados</legend>
+                    <button type="button" class="btn-add" onclick="addLinha('desenhos')">+ Add Desenho</button>
+                </div>
+                <div id="container-desenhos"></div> 
+            </fieldset>
+
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <div class="cabecalho-secao">
+                    <legend style="color: var(--cor-primaria);">4. Envolvidos</legend>
+                    <button type="button" class="btn-add" onclick="addEnvolvido('', '')">+ Add Envolvido</button>
+                </div>
+                <div id="container-envolvidos"></div>
+            </fieldset>
+
+            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">5. Anexos / Evidências (Selecione vários se necessário)</legend>
+                <div class="form-grupo">
+                    <input type="file" id="in-anexo" accept="image/*" multiple onchange="carregarImagens(event)">
+                </div>
+            </fieldset>
+
+            <button type="button" class="btn-acao" id="btn-imprimir" onclick="window.print()">🖨️ IMPRIMIR / SALVAR PDF</button>
+        </form>
+    </div>
+
+    <div class="painel-preview">
+        <div class="folha-a4">
+            
+            <!-- CABEÇALHO -->
+            <div class="cabecalho-sad">
+                <div class="cab-logo"><img src="./logo.png" alt="Sodramar"></div>
+                <div class="cab-titulo">SAD - SOLICITAÇÃO DE ALTERAÇÃO DE DESENHO</div>
+                <div class="cab-numero">Nº:<br><span id="out-sad-num"></span></div>
+            </div>
+
+            <!-- SOLICITANTE -->
+            <div class="titulo-faixa">SOLICITANTE</div>
+            <table class="tabela-sad espaco">
+                <thead>
+                    <tr><th width="25%">SETOR</th><th width="35%">NOME DO RESPONSÁVEL</th><th width="20%">VISTO</th><th width="20%">DATA</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="out-setor"></td>
+                        <td id="out-solicitante"></td>
+                        <td></td>
+                        <td id="out-data"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- MOTIVO -->
+            <div class="titulo-faixa">MOTIVO DA ALTERAÇÃO</div>
+            <table class="tabela-sad espaco">
+                <tbody>
+                    <tr><td style="text-align: center; min-height: 50px; font-weight: bold; white-space: pre-wrap;" id="out-motivo"></td></tr>
+                </tbody>
+            </table>
+
+            <!-- DESENHOS A SEREM ALTERADOS -->
+            <div class="titulo-faixa">DESENHOS A SEREM ALTERADOS</div>
+            <table class="tabela-sad espaco">
+                <thead>
+                    <tr><th class="col-codigo">CÓDIGO</th><th class="col-desc" style="text-align: center;">DESCRIÇÃO</th><th class="col-alt" style="text-align: center;">O QUE VAI SER ALTERADO</th></tr>
+                </thead>
+                <tbody id="tbody-desenhos"></tbody>
+            </table>
+
+            <!-- CONSEQUÊNCIAS -->
+            <div class="sub-faixa">CONSEQUÊNCIAS (USO DA ENGENHARIA)</div>
+            <table class="tabela-sad espaco">
+                <thead>
+                    <tr><th class="col-codigo">CÓDIGO</th><th class="col-desc" style="text-align: center;">DESCRIÇÃO</th><th class="col-alt" style="text-align: center;">O QUE VAI SER ALTERADO</th></tr>
+                </thead>
+                <tbody id="tbody-conseq">
+                    <tr><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td></tr>
+                </tbody>
+            </table>
+
+            <!-- PPCP -->
+            <div class="sub-faixa-amarela">PARA USO EXCLUSIVO DO PPCP</div>
+            <table class="tabela-sad espaco">
+                <thead>
+                    <tr><th class="col-codigo">CÓDIGO</th><th class="col-desc" style="text-align: center;">DESCRIÇÃO</th><th width="25%">QUANTIDADE</th><th width="25%">VALOR TOTAL</th></tr>
+                </thead>
+                <tbody id="tbody-ppcp">
+                    <tr><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td></tr>
+                </tbody>
+            </table>
+
+            <!-- ENVOLVIDOS -->
+            <div class="titulo-faixa" style="color: red;">ENVOLVIDOS</div>
+            <table class="tabela-sad espaco">
+                <thead>
+                    <tr><th width="25%">SETOR</th><th width="35%">RESPONSÁVEL</th><th width="20%">VISTO</th><th width="20%">DATA</th></tr>
+                </thead>
+                <tbody id="tbody-envolvidos"></tbody>
+            </table>
+
+            <!-- RODAPÉ -->
+            <div class="rodape-obs">
+                * QUALQUER EVIDÊNCIA REFERENTE A HOMOLOGAÇÃO, DEVE ESTAR ANEXADO JUNTO A ESSE DOCUMENTO *
+            </div>
+
+        </div>
+
+        <!-- PÁGINAS DE ANEXOS DINÂMICAS -->
+        <div id="container-paginas-anexos"></div>
+    </div>
+
+    <script>
+        // URL da API do seu Google Apps Script
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbwR_CkY_ZL9Rw74BcEHWyt5zxH75gXBykvx8XWLzLjTgbRMehgUSdnaR9HcYiIT-zhPrA/exec";
+        let dbLocal = {};
+
+        function setEstadoFormulario(estadoDesabilitado) {
+            const elementos = document.querySelectorAll('#formSAD input, #formSAD select, #formSAD button, #formSAD textarea');
+            elementos.forEach(el => el.disabled = estadoDesabilitado);
+        }
+
+        function carregarBancoDeDados(forcarAtualizacao = false) {
+            setEstadoFormulario(true);
+            const statusDiv = document.getElementById('status-db');
+            statusDiv.style.display = 'block';
+
+            // Sistema de Cache para carregar instantaneamente
+            const cacheKey = 'dbSodramar_sad';
+            const cacheTimeKey = 'dbSodramar_time_sad';
+            const cacheVal = localStorage.getItem(cacheKey);
+            const cacheTime = localStorage.getItem(cacheTimeKey);
+            const agora = new Date().getTime();
+
+            // Usa o cache se existir, não for forçado e for mais novo que 12 horas (43200000 ms)
+            if (!forcarAtualizacao && cacheVal && cacheTime && (agora - cacheTime < 43200000)) {
+                dbLocal = JSON.parse(cacheVal);
+                statusDiv.innerText = `⚡ Banco carregado rapidamente (${Object.keys(dbLocal).length} itens).`;
+                statusDiv.className = "status-ok";
+                iniciarSistema();
+                setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+                return;
+            }
+
+            statusDiv.innerText = "⏳ Conectando à nuvem. Pode levar alguns segundos...";
+            statusDiv.className = "";
+            statusDiv.style.backgroundColor = "#fff3cd";
+            
+            fetch(URL_PLANILHA)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.erro) {
+                        statusDiv.innerText = "❌ Erro ao conectar com o banco de dados.";
+                        statusDiv.className = "status-erro";
+                    } else {
+                        dbLocal = data;
+                        // Salva no cache local do computador
+                        localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
+                        localStorage.setItem(cacheTimeKey, agora.toString());
+
+                        statusDiv.innerText = `✅ Banco atualizado com sucesso (${Object.keys(dbLocal).length} itens).`;
+                        statusDiv.className = "status-ok";
+                        iniciarSistema();
+                        setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+                    }
+                })
+                .catch(error => {
+                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os produtos.";
+                    statusDiv.className = "status-erro";
+                    console.error(error);
+                });
+        }
+
+        function iniciarSistema() {
+            setEstadoFormulario(false); 
+
+            // Só adiciona as linhas padrão se o formulário estiver vazio (evita duplicar ao clicar em atualizar)
+            if(document.querySelectorAll('#container-desenhos .linha-dinamica').length === 0) {
+                // Linhas Padrões Iniciais
+                addLinha('desenhos');
+                
+                // Envolvidos Padrões
+                addEnvolvido('DESENVOLVIMENTO', 'DOUGLAS SOARES');
+                addEnvolvido('PRODUÇÃO', 'RUBENS GOMES');
+                addEnvolvido('PCP', 'WILLIANS');
+                addEnvolvido('ENGENHARIA', 'PAULO / HENRIQUE');
+                addEnvolvido('QUALIDADE', 'JOÃO CARLOS');
+            }
+            atualizar();
+        }
+
+        // --- SISTEMA DE LINHAS DINÂMICAS ---
+        function addLinha(tipo) {
+            const container = document.getElementById(`container-${tipo}`);
+            const div = document.createElement('div');
+            div.className = 'linha-dinamica';
+
+            let htmlInterno = `
+                <button type="button" class="btn-remove" onclick="removerLinha(this)" title="Remover">-</button>
+                <div class="linha-dinamica-conteudo">
+                    <div class="linha">
+                        <input type="text" class="in-cod" maxlength="6" placeholder="Código" onblur="buscarProduto(this)" oninput="atualizar()" style="flex:0.3">
+                        <input type="text" class="in-desc" placeholder="Descrição Automática..." oninput="atualizar()" style="flex:0.7">
+                    </div>
+                    <textarea class="in-alt" rows="2" placeholder="O que vai ser alterado?" oninput="atualizar()"></textarea>
+                </div>
+            `;
+
+            div.innerHTML = htmlInterno;
+            container.appendChild(div);
+            atualizar();
+        }
+
+        function addEnvolvido(setor = '', resp = '') {
+            const container = document.getElementById('container-envolvidos');
+            const div = document.createElement('div');
+            div.className = 'linha-dinamica linha-envolvido';
+            
+            // Caixa de Seleção para o Setor
+            const opcoesSetor = ['DESENVOLVIMENTO', 'PRODUÇÃO', 'PCP', 'ENGENHARIA', 'QUALIDADE', 'ASSISTÊNCIA'];
+            let selectHTML = `<select class="env-setor" onchange="atualizar()" style="flex:1;"><option value="">Selecione...</option>`;
+            opcoesSetor.forEach(opt => {
+                selectHTML += `<option value="${opt}" ${opt === setor ? 'selected' : ''}>${opt}</option>`;
+            });
+            selectHTML += `</select>`;
+
+            div.innerHTML = `
+                <button type="button" class="btn-remove" onclick="removerLinha(this)" title="Remover">-</button>
+                <div class="linha-dinamica-conteudo">
+                    <div class="linha">
+                        ${selectHTML}
+                        <input type="text" class="env-resp" placeholder="Nome Responsável" value="${resp}" oninput="atualizar()" style="flex:2;">
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            atualizar();
+        }
+
+        function removerLinha(btn) {
+            btn.closest('.linha-dinamica').remove();
+            atualizar();
+        }
+
+        function buscarProduto(inputElement) {
+            let cod = inputElement.value.trim();
+            let row = inputElement.closest('.linha-dinamica');
+            if (!row) return;
+
+            let inDesc = row.querySelector('.in-desc');
+
+            if (cod === "") {
+                if(inDesc) inDesc.value = "";
+                atualizar();
+                return;
+            }
+
+            let produto = dbLocal[cod];
+            if (produto) {
+                if(inDesc) inDesc.value = produto.desc || "";
+                atualizar(); 
+            }
+        }
+
+        // --- RENDERIZAÇÃO DA FOLHA A4 ---
+        function getVal(id) {
+            let el = document.getElementById(id);
+            return el ? el.value.toUpperCase() : '';
+        }
+
+        function formatarData(input) {
+            let v = input.value.replace(/\\D/g, ''); 
+            if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+            if (v.length > 5) v = v.slice(0, 5) + '/' + v.slice(5, 9);
+            input.value = v;
+            atualizar();
+        }
+
+        function setTexto(idOut, idIn) {
+            document.getElementById(idOut).innerText = getVal(idIn);
+        }
+
+        function renderizarTabela(tipoContainer, tbodyId) {
+            const rows = document.querySelectorAll(`#container-${tipoContainer} .linha-dinamica`);
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+
+            if(rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="color:#aaa; height: 30px;"></td></tr>`;
+                return;
+            }
+
+            rows.forEach(row => {
+                const cod = (row.querySelector('.in-cod').value || '').toUpperCase();
+                const desc = (row.querySelector('.in-desc').value || '').toUpperCase();
+                let tr = document.createElement('tr');
+
+                const alt = (row.querySelector('.in-alt').value || '').toUpperCase();
+                tr.innerHTML = `<td class="col-codigo">${cod}</td><td class="col-desc">${desc}</td><td class="col-alt">${alt}</td>`;
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        function atualizar() {
+            setTexto('out-sad-num', 'in-sad-num');
+            setTexto('out-data', 'in-data');
+            setTexto('out-setor', 'in-setor');
+            setTexto('out-solicitante', 'in-solicitante');
+            setTexto('out-motivo', 'in-motivo');
+
+            renderizarTabela('desenhos', 'tbody-desenhos');
+
+            const tbodyEnv = document.getElementById('tbody-envolvidos');
+            tbodyEnv.innerHTML = '';
+            document.querySelectorAll('.linha-envolvido').forEach(linha => {
+                const s = linha.querySelector('.env-setor').value.toUpperCase();
+                const r = linha.querySelector('.env-resp').value.toUpperCase();
+                tbodyEnv.innerHTML += `<tr><td>${s}</td><td>${r}</td><td></td><td></td></tr>`;
+            });
+        }
+
+        function carregarImagens(event) {
+            const files = event.target.files;
+            const anexoContainer = document.getElementById('container-paginas-anexos');
+            anexoContainer.innerHTML = ''; // Limpa as imagens anteriores
+
+            if (files && files.length > 0) {
+                Array.from(files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const divFolha = document.createElement('div');
+                        divFolha.className = 'folha-a4 folha-anexo';
+                        divFolha.style.cssText = 'margin-top: 20px;';
+                        
+                        divFolha.innerHTML = `
+                            <div class="titulo-faixa">ANEXOS / EVIDÊNCIAS - PARTE ${index + 1}</div>
+                            <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #000; margin-top: 10px; padding: 10px; height: 240mm; box-sizing: border-box;">
+                                <img src="${e.target.result}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                            </div>
+                        `;
+                        anexoContainer.appendChild(divFolha);
+                    }
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+
+        window.onload = function() {
+            carregarBancoDeDados();
+            
+            const campoData = document.getElementById('in-data');
+            if(!campoData.value) {
+                const hoje = new Date();
+                const dia = String(hoje.getDate()).padStart(2, '0');
+                const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+                const ano = hoje.getFullYear();
+                campoData.value = `${dia}/${mes}/${ano}`;
+            }
+            atualizar();
+        };
+    </script>
+</body>
+</html>
