@@ -57,13 +57,11 @@
 
         .titulo-faixa { background-color: #e0e0e0 !important; font-weight: bold; text-align: center; font-size: 11px; padding: 5px; border: 1px solid #000; border-bottom: none; text-transform: uppercase; margin-top: 5px; }
         
-        /* Modificado: table-layout fixed impede que palavras gigantes quebrem a tabela */
         table.tabela-oat { width: 100%; border-collapse: collapse; margin-bottom: 10px; text-align: left; table-layout: fixed; }
         table.tabela-oat th, table.tabela-oat td { border: 1px solid #000; padding: 6px; }
         table.tabela-oat th { background-color: #f4f4f4; font-size: 10px; text-transform: uppercase; color: #333; }
         table.tabela-oat td { font-size: 12px; font-weight: bold; text-transform: uppercase; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }
 
-        /* Modificado: flex-grow removido, definido min-height mais condizente */
         .caixa-reclame { border: 1px solid #000; padding: 10px; min-height: 120px; font-size: 12px; font-weight: bold; text-transform: uppercase; white-space: pre-wrap; background-color: #fff2cc; word-wrap: break-word; overflow-wrap: break-word; }
 
         .rodape-obs { font-size: 9px; text-align: center; font-weight: bold; margin-top: auto; border: 1px solid #000; padding: 5px; background-color: #e0e0e0;}
@@ -120,7 +118,6 @@
                     </div>
                     <div class="form-grupo">
                         <label>Abertura do ID <span class="obrigatorio">*</span></label>
-                        <!-- Agora formata como data -->
                         <input type="text" id="in-abertura-id" oninput="formatarData(this)" placeholder="DD/MM/AAAA" maxlength="10" required>
                     </div>
                     <div class="form-grupo">
@@ -213,7 +210,7 @@
         <div class="folha-a4">
             
             <div class="cabecalho-oat">
-                <div class="cab-logo"><img src="./logo.png" alt="Sodramar"></div>
+                <div class="cab-logo"><img src="./logo.png" alt="Sodramar" onerror="this.style.display='none'"></div>
                 <div class="cab-titulo">ORDEM DE ATENDIMENTO - OAT</div>
             </div>
 
@@ -290,7 +287,8 @@
     </div>
 
     <script>
-        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbwR_CkY_ZL9Rw74BcEHWyt5zxH75gXBykvx8XWLzLjTgbRMehgUSdnaR9HcYiIT-zhPrA/exec";
+        // Novo Link de banco de dados
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzlusRBsDUfFkT1UHUTX7ldGgyiQvp4iGAzhexNSwMf8qHrnjSoGUPcGj3UIwYdwuwiog/exec";
         let dbLocal = {};
 
         function setEstadoFormulario(estadoDesabilitado) {
@@ -298,14 +296,14 @@
             elementos.forEach(el => el.disabled = estadoDesabilitado);
         }
 
-        // --- SISTEMA DE CACHE E BANCO DE DADOS ORIGINAL ESTÁVEL ---
+        // --- SISTEMA DE CACHE E BANCO DE DADOS ROBUSTO ---
         function carregarBancoDeDados(forcarAtualizacao = false) {
             setEstadoFormulario(true);
             const statusDiv = document.getElementById('status-db');
             statusDiv.style.display = 'block';
 
-            const cacheKey = 'dbSodramar_oat';
-            const cacheTimeKey = 'dbSodramar_time_oat';
+            const cacheKey = 'dbSodramar_oat_v12';
+            const cacheTimeKey = 'dbSodramar_time_oat_v12';
             const cacheVal = localStorage.getItem(cacheKey);
             const cacheTime = localStorage.getItem(cacheTimeKey);
             const agora = new Date().getTime();
@@ -325,7 +323,15 @@
             statusDiv.style.backgroundColor = "#fff3cd";
             
             fetch(URL_PLANILHA)
-                .then(response => response.json())
+                .then(async response => {
+                    const texto = await response.text();
+                    try {
+                        return JSON.parse(texto);
+                    } catch (e) {
+                        console.error("Erro do Google (bloqueio HTML):", texto.substring(0, 100));
+                        throw new Error("O Google bloqueou a rede ou o link está incorreto.");
+                    }
+                })
                 .then(data => {
                     if (data.erro) {
                         statusDiv.innerText = "❌ Erro ao conectar com o banco de dados.";
@@ -343,7 +349,7 @@
                     }
                 })
                 .catch(error => {
-                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os produtos.";
+                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os dados.";
                     statusDiv.className = "status-erro";
                     setEstadoFormulario(false);
                     console.error(error);
@@ -424,7 +430,6 @@
 
             if (!files || files.length === 0) return;
 
-            // Transforma os arquivos selecionados em Base64
             const filePromises = Array.from(files).map(file => {
                 return new Promise((resolve) => {
                     const reader = new FileReader();
@@ -433,10 +438,8 @@
                 });
             });
 
-            // Aguarda todas as imagens serem carregadas em memória
             const imagensBase64 = await Promise.all(filePromises);
 
-            // Agrupa as imagens de 4 em 4 para cada página A4
             for (let i = 0; i < imagensBase64.length; i += 4) {
                 const chunk = imagensBase64.slice(i, i + 4);
                 
