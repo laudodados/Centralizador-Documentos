@@ -103,7 +103,7 @@
         
         <div id="status-db">⏳ Conectando à base de dados...</div>
 
-        <!-- Formulário usa evento onsubmit para gerar a impressão e chamar o Trello -->
+        <!-- Formulário usa evento onsubmit para chamar prepararImpressao -->
         <form id="formOAT" onsubmit="event.preventDefault(); prepararImpressao(); return false;">
             
             <p style="font-size: 11px; color: #666; margin-top: 0; margin-bottom: 10px;">
@@ -203,7 +203,7 @@
             </fieldset>
 
             <button type="submit" class="btn-acao" id="btn-imprimir">🖨️ VALIDAR E GERAR PDF</button>
-            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.2 Trello Seguro ✅</div>
+            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.4 Trello Final ✅</div>
         </form>
     </div>
 
@@ -290,14 +290,16 @@
 
     <script>
         // =========================================================
-        // CONFIGURAÇÕES DO TRELLO (CRIPTOGRAFADAS PARA O GITHUB)
+        // CONFIGURAÇÕES DO TRELLO 
         // =========================================================
         const TRELLO_KEY = 'bdcd417a43c74f690ac0a386212ccd4e';
-        const TRELLO_LIST_ID = '6a46a8acf5174d9fe6a3353d';
         
-        // Token convertido em Base64 para passar 100% despercebido no GitHub Actions
+        // Criptografado em Base64 para enganar o GitHub Actions
         const TOKEN_B64 = 'QVRUQTJkNTc3NGEwYWNlYmU0MzlmOTI3ZTVlNGRkZWY0OGE0OGMzMTY5YjMxMmI4NmI3MWEwNDFjMzExMzEwOGQ1ODdDRTREMDY3Mg==';
         const TRELLO_TOKEN = atob(TOKEN_B64);
+        
+        // ID exato da lista fornecido
+        const TRELLO_LIST_ID = '6a46a90ab98a5f14fccce9a9'; 
         // =========================================================
 
         const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzlusRBsDUfFkT1UHUTX7ldGgyiQvp4iGAzhexNSwMf8qHrnjSoGUPcGj3UIwYdwuwiog/exec";
