@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ficha Criação de Códigos - Sodramar</title>
-    
     <link rel="icon" href="icone.ico" type="image/png">
-    
     <style>
         /* --- ESTILO DO SISTEMA (TELA DE TRABALHO) --- */
         :root {
@@ -39,7 +37,7 @@
         .caixa-radios { border: 1px solid var(--cor-borda); padding: 8px; border-radius: 4px; display: flex; flex-wrap: wrap; gap: 10px; background-color: #f8f9fa; }
         .caixa-radios label { display: flex; align-items: center; gap: 5px; font-size: 11px; cursor: pointer; }
 
-        .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; transition: 0.2s; }
+        .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: margin-top: 10px; font-size: 14px; transition: 0.2s; cursor: pointer; }
         .btn-acao:hover { background-color: #218838; }
 
         .container-similares { margin-top: 10px; padding: 10px; background-color: #e9ecef; border-radius: 5px; border: 1px solid #adb5bd; display: none; max-height: 200px; overflow-y: auto; }
@@ -386,18 +384,19 @@
     </div>
 
     <script>
-        // Novo Link de banco de dados específico para Sol.AB
+        // Link fornecido para Sol.AB
         const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyOTdpPB8q4DTelfleOsQLdH1bnGLB02p718ePEFTvNHZabX4_L1GoStPxmSHMLHlD0/exec";
         
         let dbLocal = [];
 
-        // --- SISTEMA DE CACHE E BANCO DE DADOS ROBUSTO ---
+        // --- SISTEMA DE LEITURA UNIVERSAL E ANTI-FALHAS ---
         function carregarBancoDeDados(forcarAtualizacao = false) {
             const statusDiv = document.getElementById('status-db');
             if(statusDiv) statusDiv.style.display = 'block';
 
-            const cacheKey = 'dbSodramar_solab_v12';
-            const cacheTimeKey = 'dbSodramar_time_solab_v12';
+            // Cache versão 16 para forçar limpeza completa do navegador
+            const cacheKey = 'dbSodramar_solab_v16';
+            const cacheTimeKey = 'dbSodramar_time_solab_v16';
             const cacheVal = localStorage.getItem(cacheKey);
             const cacheTime = localStorage.getItem(cacheTimeKey);
             const agora = new Date().getTime();
@@ -424,20 +423,27 @@
                     try {
                         return JSON.parse(texto);
                     } catch (e) {
-                        console.error("Erro do Google (bloqueio HTML):", texto.substring(0, 100));
-                        throw new Error("O Google bloqueou a rede ou o link está incorreto.");
+                        throw new Error("O Google bloqueou a rede ou o formato é inválido. Retorno: " + texto.substring(0, 60));
                     }
                 })
                 .then(data => {
-                    dbLocal = [];
-                    for (let i = 0; i < data.length; i++) {
-                        dbLocal.push({
-                            codigo: data[i].codigo,
-                            desc: data[i].descricao,
-                            ncm: data[i].ncm,
-                            descNcm: data[i].desc_ncm
-                        });
+                    if (data.erro) {
+                        throw new Error(data.error || "Erro retornado pelo script do Google.");
                     }
+                    
+                    dbLocal = [];
+                    
+                    // MOTOR UNIVERSAL: Lida com Listas ou Objetos
+                    let registros = Array.isArray(data) ? data : Object.values(data);
+                    
+                    registros.forEach(item => {
+                        dbLocal.push({
+                            codigo: String(item.codigo || item.cod || '').trim().toUpperCase(),
+                            desc: item.descricao || item.desc || '',
+                            ncm: item.ncm || '',
+                            descNcm: item.desc_ncm || item.descncm || ''
+                        });
+                    });
                     
                     localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
                     localStorage.setItem(cacheTimeKey, agora.toString());
@@ -450,7 +456,7 @@
                 }).catch(e => {
                     console.error(e);
                     if(statusDiv) {
-                        statusDiv.innerText = "❌ Erro ao conectar. Falha de rede ou link bloqueado.";
+                        statusDiv.innerText = "❌ " + e.message;
                         statusDiv.className = "status-erro";
                     }
                 });
