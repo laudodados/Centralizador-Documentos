@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+    <link rel="icon" type="image/x-icon" href="./icone.ico">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ficha Criação de Códigos - Sodramar</title>
-    <link rel="icon" href="icone.ico" type="image/png">
+    <title>Gerador de OAT - Sodramar</title>
     <style>
         /* --- ESTILO DO SISTEMA (TELA DE TRABALHO) --- */
         :root {
@@ -12,645 +12,560 @@
             --cor-fundo: #e9ecef;
             --cor-card: #ffffff;
             --cor-borda: #ced4da;
-            --azul-excel: #B4C6E7;
-            --amarelo-excel: #FFF2CC;
+            --cor-destaque: #e0e0e0; 
         }
 
         body { font-family: Arial, sans-serif; margin: 0; display: flex; height: 100vh; background-color: var(--cor-fundo); color: #333; }
         
-        .painel-lateral { width: 450px; padding: 20px; overflow-y: auto; background-color: var(--cor-card); border-right: 1px solid var(--cor-borda); box-shadow: 2px 0 10px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .painel-lateral h1 { font-size: 18px; color: var(--cor-primaria); margin-top: 0; border-bottom: 2px solid var(--cor-primaria); padding-bottom: 10px; }
+        .painel-lateral { width: 550px; padding: 20px; overflow-y: auto; background-color: var(--cor-card); border-right: 1px solid var(--cor-borda); box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        .painel-lateral h1 { font-size: 18px; color: var(--cor-primaria); margin-top: 0; border-bottom: 2px solid var(--cor-primaria); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
         
-        #status-db { font-size: 12px; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; background-color: #fff3cd; color: #856404; }
+        #status-db { font-size: 12px; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .status-ok { background-color: #d4edda !important; color: #155724 !important; border-color: #c3e6cb !important; }
         .status-erro { background-color: #f8d7da !important; color: #721c24 !important; border-color: #f5c6cb !important; }
 
         .form-grupo { margin-bottom: 12px; }
         .form-grupo label { display: block; font-weight: bold; font-size: 12px; margin-bottom: 4px; color: #555; }
-        .obrigatorio::after { content: " *"; color: red; }
-        input[type="text"], input[type="file"], select, textarea { width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px; font-size: 12px; box-sizing: border-box; text-transform: uppercase; }
+        .obrigatorio { color: red; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px; font-size: 12px; box-sizing: border-box; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0,91,187,0.2); }
         
+        input:disabled, select:disabled, button:disabled, textarea:disabled { background-color: #e9ecef; cursor: not-allowed; opacity: 0.7; }
+
         .linha { display: flex; gap: 10px; }
         .linha > div { flex: 1; }
 
-        .caixa-radios { border: 1px solid var(--cor-borda); padding: 8px; border-radius: 4px; display: flex; flex-wrap: wrap; gap: 10px; background-color: #f8f9fa; }
-        .caixa-radios label { display: flex; align-items: center; gap: 5px; font-size: 11px; cursor: pointer; }
+        .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; text-transform: uppercase; }
+        .btn-acao:hover:not(:disabled) { background-color: #218838; }
 
-        .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; transition: 0.2s; }
-        .btn-acao:hover { background-color: #218838; }
+        fieldset { border: 1px solid #ccc; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; background-color: #fafafa; }
+        legend { font-weight: bold; font-size: 12px; color: var(--cor-primaria); padding: 0 5px; background-color: #fafafa; border: 1px solid #ccc; border-radius: 3px; }
 
-        .container-similares { margin-top: 10px; padding: 10px; background-color: #e9ecef; border-radius: 5px; border: 1px solid #adb5bd; display: none; max-height: 200px; overflow-y: auto; }
-        .sugestao-item { background: #fff; color: #333; padding: 8px; font-size: 11px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; margin-bottom: 5px; text-align: left; transition: 0.2s; }
-        .sugestao-item:hover { background: var(--cor-primaria); color: white; border-color: var(--cor-primaria); }
-
-        .painel-preview { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; justify-content: center; background-color: #525659; }
+        /* --- ESTILO DA FOLHA DE IMPRESSÃO (A4 RESTRITO) --- */
+        .painel-preview { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; justify-content: flex-start; background-color: #525659; flex-direction: column; align-items: center; gap: 20px;}
+        
         .folha-a4 {
-            width: 210mm; min-height: 297mm; background-color: white; padding: 10mm 15mm; box-sizing: border-box; box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            font-family: Arial, sans-serif; color: #000; font-size: 11px; position: relative;
+            width: 210mm; min-height: 297mm; padding: 10mm 15mm; box-sizing: border-box; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            font-family: Arial, sans-serif; color: #000; font-size: 11px; display: flex; flex-direction: column;
+            background-color: white;
         }
 
-        .logo-container { width: 100%; text-align: center; margin-bottom: 5mm; height: 50px; display: flex; justify-content: center; align-items: center; }
-        .logo-empresa { max-height: 45px; object-fit: contain; } 
+        .cabecalho-oat { display: flex; width: 100%; border: 1px solid #000; margin-bottom: 15px; }
+        .cab-logo { width: 25%; padding: 5px; border-right: 1px solid #000; display: flex; align-items: center; justify-content: center; }
+        .cab-logo img { max-width: 120px; max-height: 45px; }
+        .cab-titulo { width: 75%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; text-align: center; padding: 10px; background-color: #f8f9fa; }
 
-        table.tbl-excel { width: 100%; border-collapse: collapse; text-align: center; font-size: 11px; margin-bottom: 0px; table-layout: fixed; }
-        table.tbl-excel th, table.tbl-excel td { border: 1px solid #000; padding: 4px; text-transform: uppercase; vertical-align: middle; word-wrap: break-word; }
+        .titulo-faixa { background-color: #e0e0e0 !important; font-weight: bold; text-align: center; font-size: 11px; padding: 5px; border: 1px solid #000; border-bottom: none; text-transform: uppercase; margin-top: 5px; }
         
-        .cab-azul { background-color: var(--azul-excel); font-weight: bold; }
-        .cel-amarela { background-color: var(--amarelo-excel); font-weight: bold; font-size: 12px; text-align: center; color: #000; }
-        .cel-preta { background-color: #000; color: #fff; font-weight: bold; letter-spacing: 1px; font-size: 12px; }
+        table.tabela-oat { width: 100%; border-collapse: collapse; margin-bottom: 10px; text-align: left; table-layout: fixed; word-wrap: break-word; }
+        table.tabela-oat th, table.tabela-oat td { border: 1px solid #000; padding: 6px; }
+        table.tabela-oat th { background-color: #f4f4f4; font-size: 10px; text-transform: uppercase; color: #333; }
+        table.tabela-oat td { font-size: 12px; font-weight: bold; text-transform: uppercase; }
 
-        .area-imagem { width: 100%; height: 110px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 2px; }
-        .area-imagem img { max-width: 100%; max-height: 110px; display: none; object-fit: contain; }
+        .caixa-reclame { border: 1px solid #000; padding: 10px; min-height: 80px; height: auto; font-size: 12px; font-weight: bold; text-transform: uppercase; white-space: pre-wrap; background-color: #fff2cc; }
 
+        .rodape-obs { font-size: 9px; text-align: center; font-weight: bold; margin-top: auto; border: 1px solid #000; padding: 5px; background-color: #e0e0e0;}
+
+        /* --- ESTILO DE GRID PARA 4 FOTOS --- */
+        .grid-fotos { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10mm; width: 100%; height: 250mm; box-sizing: border-box; padding-top: 10mm; }
+        .grid-fotos .foto-item { border: 1px solid #000; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; overflow: hidden; }
+        .grid-fotos img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        /* --- CONFIGURAÇÕES PARA IMPRESSÃO --- */
         @media print {
-            body { background: none; margin: 0; padding: 0; }
-            .painel-lateral { display: none; }
-            .painel-preview { display: block; padding: 0; overflow: visible; background: none; }
-            .folha-a4 { box-shadow: none; margin: 0; padding: 10mm; width: 100%; min-height: 100vh; }
-            .cab-azul { background-color: var(--azul-excel) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .cel-amarela { background-color: var(--amarelo-excel) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .cel-preta { background-color: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            @page { size: A4; margin: 5mm; }
+            @page { size: A4; margin: 10mm; }
+            body, html { background: none; margin: 0; padding: 0; height: auto; }
+            .painel-lateral { display: none !important; }
+            .painel-preview { display: block; padding: 0; overflow: visible; background: none; gap: 0; }
+            
+            .folha-a4 { box-shadow: none; margin: 0 !important; padding: 0 !important; width: 100%; height: auto !important; min-height: 0 !important; display: block !important; background: #ffffff !important; }
+            .folha-anexo { page-break-before: always; margin-top: 0 !important; }
+            
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            .titulo-faixa, .caixa-reclame { page-break-inside: avoid; }
+
+            .titulo-faixa { background-color: #e0e0e0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .caixa-reclame { background-color: #fff2cc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            table.tabela-oat th { background-color: #f4f4f4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cab-titulo { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .rodape-obs { background-color: #e0e0e0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
     </style>
 </head>
 <body>
 
     <div class="painel-lateral">
-        <h1>Ficha de Criação de Códigos <button type="button" onclick="carregarBancoDeDados(true)" style="float: right; font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff; color: #333;">🔄 Atualizar</button></h1>
+        <h1>
+            Gerador de OAT 
+            <button type="button" onclick="carregarBancoDeDados(true)" style="font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff; color: #333;">🔄 Atualizar Banco</button>
+        </h1>
+        
         <div id="status-db">⏳ Conectando à base de dados...</div>
 
-        <form id="formFicha">
-            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">1. Identificação</legend>
-                <div class="form-grupo"><label class="obrigatorio">Solicitante</label><input type="text" id="in-solicitante" value="" oninput="atualizar()"></div>
-                
-                <div class="linha">
-                    <div class="form-grupo"><label class="obrigatorio">Departamento</label><input type="text" id="in-departamento" value="" oninput="atualizar()"></div>
-                    <div class="form-grupo"><label class="obrigatorio">Processo Nº</label><input type="text" id="in-processo" oninput="atualizar()"></div>
-                </div>
+        <!-- O formulário bloqueia a página de recarregar e chama o Trello primeiro -->
+        <form id="formOAT" onsubmit="event.preventDefault(); prepararImpressao(); return false;">
+            
+            <p style="font-size: 11px; color: #666; margin-top: 0; margin-bottom: 10px;">
+                Os campos marcados com <span class="obrigatorio">*</span> são obrigatórios para a emissão.
+            </p>
 
+            <fieldset>
+                <legend>1. Dados do Atendimento</legend>
                 <div class="linha">
-                    <div class="form-grupo"><label class="obrigatorio">Data</label><input type="text" id="in-data" placeholder="DD/MM/AAAA" oninput="atualizar()"></div>
-                    <div class="form-grupo"><label class="obrigatorio">Imagem do Produto</label><input type="file" id="in-imagem" accept="image/*" onchange="carregarImagem(event)"></div>
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>ID CVortex <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-cvortex" oninput="atualizar()" placeholder="Ex: 123456" required>
+                    </div>
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>Abertura do ID <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-abertura-id" oninput="formatarData(this)" placeholder="DD/MM/AAAA" maxlength="10" required>
+                    </div>
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>Data da Visita <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-data-visita" oninput="formatarData(this)" placeholder="DD/MM/AAAA" maxlength="10" required>
+                    </div>
                 </div>
             </fieldset>
 
-            <fieldset style="border: 1px solid #e0c800; padding: 10px; border-radius: 5px; margin-bottom: 15px; background-color: #fffdf2;">
-                <legend style="font-weight: bold; font-size: 12px; color: #856404;">2. Produto</legend>
-                
+            <fieldset>
+                <legend>2. Dados do Cliente</legend>
                 <div class="form-grupo">
-                    <label class="obrigatorio">Descrição <span style="color:#d9534f; font-weight:normal;">(Máx. 40 caract.)</span></label>
-                    <input type="text" id="in-desc" maxlength="40" oninput="calcularCaracteres()">
+                    <label>Cliente / Empresa <span class="obrigatorio">*</span></label>
+                    <input type="text" id="in-cliente" oninput="atualizar()" placeholder="Nome do cliente" required>
                 </div>
-
-                <div class="linha">
-                    <div class="form-grupo">
-                        <label class="obrigatorio">Tipo</label>
-                        <select id="in-tipo" onchange="atualizar(); verificarRegrasTipo();">
-                            <option value=""></option>
-                            <option value="IP">IP</option>
-                            <option value="MC">MC</option>
-                            <option value="MP">MP</option>
-                            <option value="PA">PA</option>
-                            <option value="PE">PE</option>
-                            <option value="RP">RP</option>
-                            <option value="ST">ST</option>
-                            <option value="SI">SI</option>
-                        </select>
-                    </div>
-                    <div class="form-grupo"><label>Caract.</label><input type="text" id="in-caract" readonly style="background:#e9ecef;"></div>
-                    <div class="form-grupo">
-                        <label class="obrigatorio">Unidade</label>
-                        <select id="in-unid" onchange="atualizar()">
-                            <option value=""></option>
-                            <option value="AR">AR</option><option value="BB">BB</option><option value="BD">BD</option>
-                            <option value="BL">BL</option><option value="BR">BR</option><option value="CA">CA</option>
-                            <option value="CJ">CJ</option><option value="CT">CT</option><option value="CX">CX</option>
-                            <option value="FD">FD</option><option value="FL">FL</option><option value="GL">GL</option>
-                            <option value="HR">HR</option><option value="JG">JG</option><option value="KG">KG</option>
-                            <option value="KM">KM</option><option value="L">L</option><option value="LT">LT</option>
-                            <option value="M²">M²</option><option value="M³">M³</option><option value="MI">MI</option>
-                            <option value="ML">ML</option><option value="MH">MH</option><option value="MT">MT</option>
-                            <option value="PC">PC</option><option value="PR">PR</option><option value="PT">PT</option>
-                            <option value="RL">RL</option><option value="SC">SC</option><option value="TB">TB</option>
-                            <option value="TL">TL</option><option value="UN">UN</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="linha">
-                    <div class="form-grupo"><label id="lbl-pbruto">Peso Bruto</label><input type="text" id="in-pbruto" onblur="formatarPeso(this)" oninput="atualizar()"></div>
-                    <div class="form-grupo"><label id="lbl-pliquido">Peso Líquido</label><input type="text" id="in-pliquido" onblur="formatarPeso(this)" oninput="atualizar()"></div>
-                    <div class="form-grupo">
-                        <label class="obrigatorio">Origem</label>
-                        <select id="in-origem" onchange="atualizar()">
-                            <option value=""></option>
-                            <option value="0">0 (Nacional)</option>
-                            <option value="1">1 (Importado)</option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="form-grupo">
-                    <label class="obrigatorio">Empresa Cadastrada</label>
-                    <div class="caixa-radios">
-                        <label><input type="radio" name="empresa" value="SODRAMAR" onchange="atualizar()" checked> Sodramar</label>
-                        <label><input type="radio" name="empresa" value="FILTER UP" onchange="atualizar()"> Filter Up</label>
-                        <label><input type="radio" name="empresa" value="WELD STEAM" onchange="atualizar()"> Weld Steam</label>
-                        <label><input type="radio" name="empresa" value="SDR" onchange="atualizar()"> SDR</label>
-                    </div>
+                    <label>Endereço Completo <span class="obrigatorio">*</span></label>
+                    <input type="text" id="in-end" oninput="atualizar()" placeholder="Rua, Número, Bairro, Cidade - UF" required>
                 </div>
-
                 <div class="linha">
                     <div class="form-grupo" style="flex: 2;">
-                        <label class="obrigatorio">NCM (Busca Automática)</label>
-                        <input type="text" id="in-ncm" placeholder="Digite apenas o NCM..." onkeyup="buscarNCM()" oninput="atualizar()">
+                        <label>Complemento</label>
+                        <input type="text" id="in-complemento" oninput="atualizar()" placeholder="Apto, Galpão, Bloco, etc.">
                     </div>
-                    <div class="form-grupo"><label>IPI</label><input type="text" id="in-ipi" oninput="atualizar()"></div>
-                    <div class="form-grupo"><label>ST</label><input type="text" id="in-st" oninput="atualizar()"></div>
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>É Condomínio? <span class="obrigatorio">*</span></label>
+                        <select id="in-condominio" onchange="atualizar()" required>
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="NÃO">NÃO</option>
+                            <option value="SIM">SIM</option>
+                        </select>
+                    </div>
                 </div>
-                
-                <div class="form-grupo"><label class="obrigatorio">Descrição NCM</label><input type="text" id="in-descncm" oninput="atualizar()"></div>
-
-                <div id="container-similares" class="container-similares">
-                    <label style="font-size: 11px; color: #495057; margin-bottom: 5px; display: block;">🔍 Códigos Similares por NCM (Clique para usar):</label>
-                    <div id="lista-opcoes-ncm"></div>
-                </div>
-
-                <div class="linha" style="margin-top: 10px;">
-                    <div class="form-grupo"><label>Cód. Similar</label><input type="text" id="in-codsim" oninput="atualizar()"></div>
-                    <div class="form-grupo"><label>NCM - Cód. Similar</label><input type="text" id="in-ncmsim" readonly style="background:#e9ecef;" oninput="atualizar()"></div>
-                </div>
-            </fieldset>
-
-            <fieldset style="border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-                <legend style="font-weight: bold; font-size: 12px; color: var(--cor-primaria);">3. Processo</legend>
                 <div class="form-grupo">
-                    <label class="obrigatorio">Motivo da Criação</label>
-                    <textarea id="in-motivo" rows="2" oninput="atualizar()" placeholder="TENTE DETALHAR..."></textarea>
+                    <label>Distância da Empresa (em KM) <span class="obrigatorio">*</span></label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="number" id="in-distancia" oninput="atualizar()" placeholder="Ex: 45" required style="flex: 1;">
+                        <button type="button" onclick="abrirGoogleMaps()" style="background: #17a2b8; color: white; border: none; border-radius: 4px; padding: 0 10px; cursor: pointer; font-size: 11px; font-weight: bold; white-space: nowrap;">📍 Calcular no Maps</button>
+                    </div>
                 </div>
             </fieldset>
 
-            <button type="button" class="btn-acao" onclick="validarEImprimir()">🖨️ VALIDAR E IMPRIMIR PDF</button>
+            <fieldset>
+                <legend>3. Equipamento e Documentação</legend>
+                <div class="linha">
+                    <div class="form-grupo">
+                        <label>Código <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-codigo" onblur="buscarProduto(this)" oninput="atualizar()" placeholder="Cód do Produto" required>
+                    </div>
+                    <div class="form-grupo" style="flex: 2;">
+                        <label>Equipamento / Descrição <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-equipamento" oninput="atualizar()" placeholder="Descrição do Equipamento" required>
+                    </div>
+                </div>
+                <div class="linha">
+                    <div class="form-grupo">
+                        <label>Nota Fiscal <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-nf" oninput="atualizar()" placeholder="Número da NF" required>
+                    </div>
+                    <div class="form-grupo">
+                        <label>Orçamento <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-orcamento" oninput="atualizar()" placeholder="Nº do Orçamento" required>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>4. Reclame / Motivo</legend>
+                <div class="form-grupo">
+                    <label>Reclame (Descrição do Problema) <span class="obrigatorio">*</span></label>
+                    <textarea id="in-reclame" rows="4" oninput="atualizar()" placeholder="Descreva o motivo da visita / problema relatado pelo cliente..." required></textarea>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>5. Fotos / Evidências</legend>
+                <div class="form-grupo">
+                    <label>Fotos do Equip. e Instalação <span class="obrigatorio">*</span></label>
+                    <input type="file" id="in-anexo" accept="image/*" multiple onchange="carregarImagens(event)" required>
+                    <small style="color: #666; font-size: 10px;">Selecione uma ou mais fotos segurando CTRL.</small>
+                </div>
+            </fieldset>
+
+            <button type="submit" class="btn-acao" id="btn-imprimir">🖨️ VALIDAR E GERAR PDF</button>
+            <div style="text-align: center; font-size: 11px; color: #888; margin-top: 10px; font-weight: bold;">v2.1 Trello Automático</div>
         </form>
     </div>
 
     <div class="painel-preview">
+        <!-- PÁGINA 1: DOCUMENTO OAT -->
         <div class="folha-a4">
             
-            <div class="logo-container">
-                <img src="logo.png" class="logo-empresa" onerror="this.style.display='none'" alt="Sodramar">
+            <div class="cabecalho-oat">
+                <div class="cab-logo"><img src="./logo.png" alt="Sodramar" onerror="this.style.display='none'"></div>
+                <div class="cab-titulo">ORDEM DE ATENDIMENTO - OAT</div>
             </div>
 
-            <table class="tbl-excel">
-                <tr>
-                    <th colspan="2" class="cab-azul" style="font-size: 16px; padding: 8px;">FICHA PARA CRIAÇÃO DE CÓDIGOS</th>
-                    <th class="cab-azul" width="15%">PROCESSO</th>
-                    <th class="cel-amarela" id="out-processo" width="15%" style="font-size: 16px;"></th>
-                </tr>
-                <tr>
-                    <th class="cab-azul" width="25%">SOLICITANTE</th>
-                    <th class="cab-azul" width="25%">DEPARTAMENTO</th>
-                    <th class="cab-azul" width="25%">CÓDIGO CADASTRADO</th>
-                    <th class="cab-azul" width="25%">DATA</th>
-                </tr>
-                <tr>
-                    <td class="cel-amarela" id="out-solicitante" style="height: 20px;"></td>
-                    <td class="cel-amarela" id="out-departamento"></td>
-                    <td style="background:#fff;"></td>
-                    <td class="cel-amarela" id="out-data"></td>
-                </tr>
-                <tr><td colspan="4" style="border: none; height: 5px;"></td></tr>
-                <tr><td colspan="4" class="cel-preta">CAMPOS OBRIGATÓRIOS (SOLICITANTE)</td></tr>
-            </table>
-
-            <table class="tbl-excel" style="margin-top: -1px;">
-                <tr>
-                    <th class="cab-azul" width="25%">IMAGEM DO PRODUTO</th>
-                    <th class="cab-azul" colspan="4" width="60%">DESCRIÇÃO</th>
-                    <th class="cab-azul" width="15%">CARACT.</th>
-                </tr>
-                <tr>
-                    <td rowspan="4" style="vertical-align: middle; padding: 5px;">
-                        <div class="area-imagem">
-                            <span id="img-placeholder" style="color:#aaa; font-weight:bold; font-size:10px;">IMAGEM</span>
-                            <img id="out-img" src="">
-                        </div>
-                    </td>
-                    <td class="cel-amarela" colspan="4" id="out-desc" style="height: 30px;"></td>
-                    <td class="cel-amarela" id="out-caract" style="font-size: 16px;"></td>
-                </tr>
-                <tr>
-                    <th class="cab-azul" width="15%" rowspan="2">TIPO</th>
-                    <th class="cab-azul" width="15%" rowspan="2">ORIGEM</th>
-                    <th class="cab-azul" colspan="2" width="30%">PESO</th>
-                    <th class="cab-azul" width="15%" rowspan="2">UNIDADE</th>
-                </tr>
-                <tr>
-                    <th class="cab-azul" width="15%">BRUTO</th>
-                    <th class="cab-azul" width="15%">LIQUÍDO</th>
-                </tr>
-                <tr>
-                    <td class="cel-amarela" id="out-tipo" style="height: 25px;"></td>
-                    <td class="cel-amarela" id="out-origem"></td>
-                    <td class="cel-amarela" id="out-pbruto"></td>
-                    <td class="cel-amarela" id="out-pliquido"></td>
-                    <td class="cel-amarela" id="out-unid"></td>
-                </tr>
-            </table>
-
-            <table class="tbl-excel" style="margin-top: -1px;">
-                <tr><th colspan="8" class="cel-preta">EMPRESA CADASTRADA</th></tr>
-                <tr>
-                    <th class="cab-azul" width="15%">SODRAMAR</th>
-                    <td class="cel-amarela" id="out-sod" width="10%"></td>
-                    <th class="cab-azul" width="15%">FILTER UP</th>
-                    <td class="cel-amarela" id="out-fil" width="10%"></td>
-                    <th class="cab-azul" width="15%">WELD STEAM</th>
-                    <td class="cel-amarela" id="out-wel" width="10%"></td>
-                    <th class="cab-azul" width="15%">SDR</th>
-                    <td class="cel-amarela" id="out-sdr" width="10%"></td>
-                </tr>
-            </table>
-
-            <table class="tbl-excel" style="margin-top: -1px;">
-                <tr>
-                    <th class="cab-azul" width="40%">NCM</th>
-                    <th class="cab-azul" width="20%">IPI</th>
-                    <th class="cab-azul" width="40%">ST</th>
-                </tr>
-                <tr>
-                    <td class="cel-amarela" id="out-ncm" style="height: 20px;"></td>
-                    <td class="cel-amarela" id="out-ipi"></td>
-                    <td class="cel-amarela" id="out-st"></td>
-                </tr>
-                <tr><th colspan="3" class="cab-azul">DESCRIÇÃO NCM</th></tr>
-                <tr><td colspan="3" class="cel-amarela" id="out-descncm" style="height: 20px;"></td></tr>
-            </table>
-
-            <table class="tbl-excel" style="margin-top: -1px;">
-                <tr>
-                    <th class="cab-azul" width="30%">CÓDIGO SIMILAR</th>
-                    <th class="cab-azul" width="70%">NCM - CÓDIGO SIMILAR</th>
-                </tr>
-                <tr>
-                    <td class="cel-amarela" id="out-codsim" style="height: 20px;"></td>
-                    <td class="cel-amarela" id="out-ncmsim"></td>
-                </tr>
-                <tr><td colspan="2" style="border: none; font-weight: bold; background-color: #fff; color: #ff0000; font-size: 10px; padding: 4px; text-align: center;">**CAMPOS EM AMARELO É OBRIGATÓRIO O PREENCHIMENTO DO SOLICITANTE**</td></tr>
-            </table>
-
-            <table class="tbl-excel" style="margin-top: 0px;">
-                <tr><th class="cab-azul">MOTIVO PELA CRIAÇÃO DO CÓDIGO (TENTE DETALHAR)</th></tr>
-                <tr><td class="cel-amarela" id="out-motivo" style="height: 35px; vertical-align: middle;"></td></tr>
-            </table>
-
-            <table class="tbl-excel" style="margin-top: 8px; table-layout: fixed;">
-                <thead>
-                    <tr><th colspan="8" class="cab-azul">INFORMAÇÕES ADICIONAIS</th></tr>
-                </thead>
+            <!-- DADOS DO ATENDIMENTO -->
+            <div class="titulo-faixa">1. DADOS DO ATENDIMENTO</div>
+            <table class="tabela-oat">
                 <tbody>
-                    <tr style="height: 35px;">
-                        <th class="cab-azul" colspan="2" style="width: 25%;">ARMAZEM PADRÃO</th>
-                        <td colspan="2" style="width: 25%; background-color: #ffffff;"></td>
-                        <th class="cab-azul" colspan="2" style="width: 25%;">CONT. ENDEREÇO</th>
-                        <td colspan="2" style="width: 25%; background-color: #ffffff;"></td>
-                    </tr>
-                    <tr style="height: 35px;">
-                        <th class="cab-azul" colspan="2">CONTA CONTÁBIL</th>
-                        <td colspan="2" style="background-color: #ffffff;"></td>
-                        <th class="cab-azul" colspan="1" style="width: 12.5%;">DESC.</th>
-                        <td colspan="3" style="width: 37.5%; background-color: #ffffff;"></td>
-                    </tr>
-                    <tr style="height: 35px;">
-                        <th class="cab-azul" colspan="2">CENTRO/CUSTO</th>
-                        <td colspan="2" style="background-color: #ffffff;"></td>
-                        <th class="cab-azul" colspan="1">DESC.</th>
-                        <td colspan="3" style="background-color: #ffffff;"></td>
-                    </tr>
-                    <tr style="height: 35px;">
-                        <th class="cab-azul" colspan="2">TES ENTRADA</th>
-                        <td colspan="2" style="background-color: #ffffff;"></td>
-                        <th class="cab-azul" colspan="2">TES SAÍDA</th>
-                        <td colspan="2" style="background-color: #ffffff;"></td>
-                    </tr>
-                    <tr style="height: 35px;">
-                        <th class="cab-azul" colspan="2">NCM FINAL</th>
-                        <td colspan="2" style="background-color: #ffffff;"></td>
-                        <th class="cab-azul" colspan="2">SDR</th>
-                        <td colspan="2" style="background-color: #ffffff;"></td>
-                    </tr>
-                    <tr style="height: 35px;">
-                        <th class="cab-azul" colspan="2">% IPI</th>
-                        <td colspan="2" style="background-color: #ffffff;"></td>
-                        <th class="cab-azul" colspan="2">% ICMS</th>
-                        <td colspan="2" style="background-color: #ffffff;"></td>
+                    <tr>
+                        <th width="15%">ID CVortex:</th>
+                        <td id="out-cvortex" width="18%"></td>
+                        <th width="18%">Abertura do ID:</th>
+                        <td id="out-abertura-id" width="18%"></td>
+                        <th width="15%">Data Visita:</th>
+                        <td id="out-data-visita"></td>
                     </tr>
                 </tbody>
             </table>
 
-            <table class="tbl-excel" style="margin-top: 8px; table-layout: fixed;">
-                <tr><th colspan="40" class="cel-preta">DESCRIÇÃO FINAL</th></tr>
-                <tr style="height: 25px;">
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
-                </tr>
+            <!-- DADOS DO CLIENTE -->
+            <div class="titulo-faixa">2. DADOS DO CLIENTE / LOCAL</div>
+            <table class="tabela-oat">
+                <tbody>
+                    <tr>
+                        <th width="20%">Cliente:</th>
+                        <td id="out-cliente" colspan="3"></td>
+                    </tr>
+                    <tr>
+                        <th>Endereço:</th>
+                        <td id="out-end" colspan="3"></td>
+                    </tr>
+                    <tr>
+                        <th>Complemento:</th>
+                        <td id="out-complemento" width="40%"></td>
+                        <td colspan="2" style="font-size: 12px; vertical-align: middle;"><b>CONDOMÍNIO:</b> <span id="out-condominio" style="margin-left:5px;"></span></td>
+                    </tr>
+                    <tr>
+                        <th>Distância:</th>
+                        <td colspan="3"><span id="out-distancia"></span></td>
+                    </tr>
+                </tbody>
             </table>
 
-            <table class="tbl-excel" style="margin-top: 8px;">
-                <tr><th colspan="6" class="cab-azul">APROVAÇÕES (RESPONSÁVEIS)</th></tr>
-                <tr>
-                    <th class="cab-azul" width="16.6%">CADASTRO</th>
-                    <th class="cab-azul" width="16.6%">CONTROLADORIA</th>
-                    <th class="cab-azul" width="16.6%">PCP</th>
-                    <th class="cab-azul" width="16.6%">FISCAL</th>
-                    <th class="cab-azul" width="16.6%">DIRETORIA</th>
-                    <th class="cab-azul" width="17%">RESPONSÁVEL</th>
-                </tr>
-                <tr>
-                    <td style="height: 40px;"></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
+            <!-- EQUIPAMENTO E DOCUMENTOS -->
+            <div class="titulo-faixa">3. EQUIPAMENTO E DOCUMENTAÇÃO</div>
+            <table class="tabela-oat">
+                <tbody>
+                    <tr>
+                        <th width="20%">Código:</th>
+                        <td id="out-codigo" width="30%"></td>
+                        <th width="20%">Equipamento:</th>
+                        <td id="out-equipamento"></td>
+                    </tr>
+                    <tr>
+                        <th>Nota Fiscal:</th>
+                        <td id="out-nf"></td>
+                        <th>Orçamento:</th>
+                        <td id="out-orcamento"></td>
+                    </tr>
+                </tbody>
             </table>
+
+            <!-- RECLAME -->
+            <div class="titulo-faixa">4. RECLAME</div>
+            <div class="caixa-reclame" id="out-reclame"></div>
+
+            <div class="rodape-obs">
+                ESTE DOCUMENTO DEVE ESTAR ACOMPANHADO DAS FOTOS / EVIDÊNCIAS DE INSTALAÇÃO
+            </div>
+
         </div>
+
+        <!-- PÁGINAS DE FOTOS GERADAS DINAMICAMENTE -->
+        <div id="container-paginas-anexos"></div>
     </div>
 
     <script>
-        // O seu novo Link da Planilha
-        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyOTdpPB8q4DTelfleOsQLdH1bnGLB02p718ePEFTvNHZabX4_L1GoStPxmSHMLHlD0/exec";
-        
-        let dbLocal = [];
+        // =========================================================
+        // CONFIGURAÇÕES DO TRELLO
+        // =========================================================
+        const TRELLO_KEY = 'bdcd417a43c74f690ac0a386212ccd4e';
+        const TRELLO_TOKEN_PT1 = 'ATTA2d5774a0acebe439f927e5e4ddef48a48c';
+        const TRELLO_TOKEN_PT2 = '3169b312b86b71a041c3113108d587CE4D0672';
+        const TRELLO_TOKEN = TRELLO_TOKEN_PT1 + TRELLO_TOKEN_PT2;
+        const TRELLO_LIST_ID = '6a46a8acf5174d9fe6a3353d';
+        // =========================================================
 
-        // --- SISTEMA ORIGINAL (EXATAMENTE COMO ESTAVA A FUNCIONAR) ---
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzlusRBsDUfFkT1UHUTX7ldGgyiQvp4iGAzhexNSwMf8qHrnjSoGUPcGj3UIwYdwuwiog/exec";
+        let dbLocal = {};
+
+        function setEstadoFormulario(estadoDesabilitado) {
+            const elementos = document.querySelectorAll('#formOAT input, #formOAT select, #formOAT button, #formOAT textarea');
+            elementos.forEach(el => el.disabled = estadoDesabilitado);
+        }
+
+        // --- SISTEMA DE CACHE ---
         function carregarBancoDeDados(forcarAtualizacao = false) {
+            setEstadoFormulario(true);
             const statusDiv = document.getElementById('status-db');
-            if(statusDiv) statusDiv.style.display = 'block';
+            statusDiv.style.display = 'block';
 
-            if(statusDiv) {
-                statusDiv.innerText = "⏳ Conectando à nuvem. Pode levar alguns segundos...";
-                statusDiv.className = "";
-                statusDiv.style.backgroundColor = "#fff3cd";
-            }
+            const cacheKey = 'dbSodramar_oat_v10';
+            const cacheTimeKey = 'dbSodramar_time_oat_v10';
+            const cacheVal = localStorage.getItem(cacheKey);
+            const cacheTime = localStorage.getItem(cacheTimeKey);
+            const agora = new Date().getTime();
 
-            // O clássico fetch que estava a funcionar
-            fetch(URL_PLANILHA)
-                .then(r => r.json())
-                .then(data => {
-                    dbLocal = [];
-                    // Adaptado para ler quer seja um Array direto quer seja Objeto
-                    let registros = Array.isArray(data) ? data : Object.values(data);
-                    
-                    for (let i = 0; i < registros.length; i++) {
-                        dbLocal.push({
-                            codigo: String(registros[i].codigo || registros[i].Codigo || registros[i].cod || '').trim().toUpperCase(),
-                            desc: registros[i].descricao || registros[i].Descricao || registros[i].desc || '',
-                            ncm: registros[i].ncm || registros[i].NCM || '',
-                            descNcm: registros[i].desc_ncm || registros[i].DescricaoNCM || registros[i].descncm || ''
-                        });
-                    }
-                    
-                    if(statusDiv) {
-                        statusDiv.innerText = `✅ Banco de dados conectado (${dbLocal.length} registros).`;
-                        statusDiv.className = "status-ok";
-                        setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
-                    }
-                }).catch(e => {
-                    console.error(e);
-                    if(statusDiv) {
-                        statusDiv.innerText = "❌ Erro ao conectar. Verifique a URL do script.";
-                        statusDiv.className = "status-erro";
-                    }
-                });
-        }
-
-        function calcularCaracteres() {
-            const desc = document.getElementById('in-desc').value;
-            document.getElementById('in-caract').value = desc.length;
-            atualizar();
-        }
-
-        function formatarPeso(el) {
-            let val = el.value.replace(/kg/i, '').trim();
-            if(val) el.value = val + " KG";
-            atualizar();
-        }
-
-        function formatarNCMStr(val) {
-            let limpo = val.replace(/[^0-9]/g, "");
-            if (limpo.length === 8) {
-                return limpo.substring(0, 4) + "." + limpo.substring(4, 6) + "." + limpo.substring(6, 8);
-            }
-            return val.toUpperCase();
-        }
-
-        function verificarRegrasTipo() {
-            let tipo = document.getElementById('in-tipo').value;
-            let lblBruto = document.getElementById('lbl-pbruto');
-            let lblLiquido = document.getElementById('lbl-pliquido');
-            
-            if (tipo === 'PA' || tipo === 'RP') {
-                lblBruto.classList.add('obrigatorio');
-                lblLiquido.classList.add('obrigatorio');
-            } else {
-                lblBruto.classList.remove('obrigatorio');
-                lblLiquido.classList.remove('obrigatorio');
-            }
-        }
-
-        function carregarImagem(e) {
-            const file = e.target.files[0];
-            const img = document.getElementById('out-img');
-            const placeholder = document.getElementById('img-placeholder');
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = ev => { img.src = ev.target.result; img.style.display = 'block'; placeholder.style.display = 'none'; }
-                reader.readAsDataURL(file);
-            } else {
-                img.style.display = 'none'; placeholder.style.display = 'block';
-            }
-        }
-
-        function buscarNCM() {
-            let termoNCM = document.getElementById('in-ncm').value.trim();
-            const containerSimilares = document.getElementById('container-similares');
-            const listaDiv = document.getElementById('lista-opcoes-ncm');
-            
-            let termoLimpo = termoNCM.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-
-            if (termoLimpo === "") {
-                document.getElementById('in-descncm').value = "";
-                document.getElementById('in-codsim').value = "";
-                document.getElementById('in-ncmsim').value = "";
-                containerSimilares.style.display = 'none';
+            if (!forcarAtualizacao && cacheVal && cacheTime && (agora - cacheTime < 43200000)) {
+                dbLocal = JSON.parse(cacheVal);
+                statusDiv.innerText = `⚡ Banco carregado rapidamente (${Object.keys(dbLocal).length} itens).`;
+                statusDiv.className = "status-ok";
+                setEstadoFormulario(false);
+                setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
                 atualizar();
                 return;
             }
 
-            if (termoLimpo.length < 2 || dbLocal.length === 0) {
-                containerSimilares.style.display = 'none';
+            statusDiv.innerText = "⏳ Conectando à nuvem. Pode levar alguns segundos...";
+            statusDiv.className = "";
+            statusDiv.style.backgroundColor = "#fff3cd";
+            
+            fetch(URL_PLANILHA, { redirect: 'follow' })
+                .then(async response => {
+                    const texto = await response.text();
+                    try {
+                        return JSON.parse(texto);
+                    } catch (e) {
+                        throw new Error("O Google bloqueou a rede.");
+                    }
+                })
+                .then(data => {
+                    if (data.erro) {
+                        statusDiv.innerText = "❌ Erro ao conectar com o banco de dados.";
+                        statusDiv.className = "status-erro";
+                    } else {
+                        dbLocal = data;
+                        localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
+                        localStorage.setItem(cacheTimeKey, agora.toString());
+
+                        statusDiv.innerText = `✅ Banco atualizado com sucesso (${Object.keys(dbLocal).length} itens).`;
+                        statusDiv.className = "status-ok";
+                        setEstadoFormulario(false);
+                        setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+                        atualizar();
+                    }
+                })
+                .catch(error => {
+                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os produtos.";
+                    statusDiv.className = "status-erro";
+                    setEstadoFormulario(false);
+                });
+        }
+
+        function abrirGoogleMaps() {
+            const enderecoDestino = document.getElementById('in-end').value.trim();
+            if (!enderecoDestino) {
+                alert("Por favor, preencha o campo 'Endereço Completo' primeiro para calcular a rota.");
+                return;
+            }
+            const enderecoOrigem = "Sodramar, Diadema - SP";
+            const urlMaps = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(enderecoOrigem)}&destination=${encodeURIComponent(enderecoDestino)}`;
+            window.open(urlMaps, '_blank');
+        }
+
+        function buscarProduto(inputElement) {
+            let cod = inputElement.value.trim();
+            let inEquip = document.getElementById('in-equipamento');
+
+            if (cod === "") {
+                inEquip.value = "";
+                atualizar();
                 return;
             }
 
-            let opcoesHTML = "";
-            let contagem = 0;
-            let descricaoExata = "";
-
-            for (let i = 0; i < dbLocal.length; i++) {
-                let p = dbLocal[i];
-                let ncmStr = String(p.ncm || "");
-                let ncmLimpoPlanilha = ncmStr.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-
-                if (!ncmLimpoPlanilha) continue;
-
-                if (ncmLimpoPlanilha === termoLimpo && p.descNcm && !descricaoExata) {
-                    descricaoExata = p.descNcm;
-                }
-
-                if (ncmLimpoPlanilha.startsWith(termoLimpo)) {
-                    let descSafe = String(p.desc || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                    let descNcmSafe = String(p.descNcm || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                    
-                    opcoesHTML += `<div class="sugestao-item" onclick="selecionarSimilar('${p.codigo}', '${ncmStr}', '${descNcmSafe}')">
-                                    <b>Cód: ${p.codigo}</b> | NCM: <span style="color:#005bbb;">${formatarNCMStr(ncmStr)}</span><br>
-                                    <span style="color:#555; font-size:10px;">${descSafe}</span>
-                                   </div>`;
-                    contagem++;
-                }
-
-                if (contagem >= 15 && descricaoExata) break; 
+            let produto = dbLocal[cod];
+            if (produto && produto.desc) {
+                inEquip.value = produto.desc;
+                atualizar(); 
             }
+        }
 
-            if (descricaoExata) {
-                document.getElementById('in-descncm').value = descricaoExata;
-            }
+        function getVal(id) {
+            let el = document.getElementById(id);
+            return el ? el.value.toUpperCase() : '';
+        }
 
-            if (opcoesHTML !== "") {
-                listaDiv.innerHTML = opcoesHTML;
-                containerSimilares.style.display = 'block';
-            } else {
-                listaDiv.innerHTML = "<div style='font-size:11px; padding:5px;'>Nenhum NCM similar encontrado na base.</div>";
-                containerSimilares.style.display = 'block';
-            }
-            
+        function formatarData(input) {
+            let v = input.value.replace(/\D/g, ''); 
+            if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+            if (v.length > 5) v = v.slice(0, 5) + '/' + v.slice(5, 9);
+            input.value = v;
             atualizar();
         }
 
-        function selecionarSimilar(codSelecionado, ncmSelecionado, descNcmSelecionada) {
-            document.getElementById('in-codsim').value = codSelecionado;
-            document.getElementById('in-ncmsim').value = formatarNCMStr(ncmSelecionado); 
-            document.getElementById('in-ncm').value = formatarNCMStr(ncmSelecionado);
-            
-            if (descNcmSelecionada && descNcmSelecionada !== "undefined") {
-                document.getElementById('in-descncm').value = descNcmSelecionada;
-            }
-            document.getElementById('container-similares').style.display = 'none';
-            atualizar();
+        function setTexto(idOut, idIn, sufixo = '') {
+            let val = getVal(idIn);
+            document.getElementById(idOut).innerText = val ? val + sufixo : '';
         }
-
-        function validarEImprimir() {
-            const obrigatorios = [
-                { id: 'in-solicitante', nome: 'Solicitante' },
-                { id: 'in-departamento', nome: 'Departamento' },
-                { id: 'in-processo', nome: 'Processo Nº' },
-                { id: 'in-data', nome: 'Data' },
-                { id: 'in-imagem', nome: 'Imagem do Produto' },
-                { id: 'in-desc', nome: 'Descrição' },
-                { id: 'in-tipo', nome: 'Tipo' },
-                { id: 'in-unid', nome: 'Unidade' },
-                { id: 'in-origem', nome: 'Origem' },
-                { id: 'in-ncm', nome: 'NCM' },
-                { id: 'in-descncm', nome: 'Descrição NCM' },
-                { id: 'in-motivo', nome: 'Motivo da Criação' }
-            ];
-
-            let camposFaltantes = [];
-            for (let campo of obrigatorios) {
-                let elemento = document.getElementById(campo.id);
-                if (elemento.type === 'file') {
-                    if (elemento.files.length === 0) camposFaltantes.push(campo.nome);
-                } else if (!elemento || elemento.value.trim() === "") {
-                    camposFaltantes.push(campo.nome);
-                }
-            }
-
-            let tipo = document.getElementById('in-tipo').value;
-            if (tipo === 'PA' || tipo === 'RP') {
-                if (!document.getElementById('in-pbruto').value.trim()) camposFaltantes.push('Peso Bruto');
-                if (!document.getElementById('in-pliquido').value.trim()) camposFaltantes.push('Peso Líquido');
-            }
-
-            if (camposFaltantes.length > 0) {
-                alert("⛔ ERRO - IMPRESSÃO BLOQUEADA\n\nPor favor, preencha os seguintes campos obrigatórios:\n\n- " + camposFaltantes.join("\n- "));
-                return;
-            }
-
-            let processo = document.getElementById('in-processo').value.trim().toUpperCase();
-            let descricao = document.getElementById('in-desc').value.trim().toUpperCase();
-            let tituloOriginal = document.title;
-
-            document.title = "Sol.Ab " + processo + " " + descricao;
-
-            window.print();
-
-            setTimeout(() => {
-                document.title = tituloOriginal;
-            }, 1000);
-        }
-
-        function getVal(id) { let el = document.getElementById(id); return el ? el.value.toUpperCase() : ''; }
-        function setTexto(idOut, idIn) { document.getElementById(idOut).innerText = getVal(idIn); }
 
         function atualizar() {
-            setTexto('out-solicitante', 'in-solicitante');
-            setTexto('out-departamento', 'in-departamento');
-            setTexto('out-processo', 'in-processo');
-            setTexto('out-data', 'in-data');
-            setTexto('out-desc', 'in-desc');
-            setTexto('out-caract', 'in-caract');
-            setTexto('out-tipo', 'in-tipo');
-            setTexto('out-unid', 'in-unid');
+            setTexto('out-cvortex', 'in-cvortex');
+            setTexto('out-abertura-id', 'in-abertura-id');
+            setTexto('out-data-visita', 'in-data-visita');
             
-            let origemSelect = document.getElementById('in-origem');
-            if(origemSelect.selectedIndex > 0) {
-                document.getElementById('out-origem').innerText = origemSelect.options[origemSelect.selectedIndex].text.split(' ')[0];
-            } else {
-                document.getElementById('out-origem').innerText = "";
+            setTexto('out-cliente', 'in-cliente');
+            setTexto('out-end', 'in-end');
+            setTexto('out-complemento', 'in-complemento');
+            setTexto('out-condominio', 'in-condominio');
+            
+            let dist = getVal('in-distancia');
+            document.getElementById('out-distancia').innerText = dist ? dist + ' KM' : '';
+
+            setTexto('out-codigo', 'in-codigo');
+            setTexto('out-equipamento', 'in-equipamento');
+            setTexto('out-nf', 'in-nf');
+            setTexto('out-orcamento', 'in-orcamento');
+            
+            setTexto('out-reclame', 'in-reclame');
+        }
+
+        function carregarImagens(event) {
+            const files = event.target.files;
+            const anexoContainer = document.getElementById('container-paginas-anexos');
+            anexoContainer.innerHTML = ''; 
+
+            if (files && files.length > 0) {
+                let imagensCarregadas = 0;
+                let divGrade = null;
+
+                Array.from(files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        if (imagensCarregadas % 4 === 0) {
+                            const divFolha = document.createElement('div');
+                            divFolha.className = 'folha-a4 folha-anexo';
+                            divFolha.style.cssText = 'margin-top: 20px;';
+                            
+                            divFolha.innerHTML = `<div class="titulo-faixa">ANEXOS / EVIDÊNCIAS - PÁGINA ${Math.floor(imagensCarregadas/4) + 1}</div>`;
+                            
+                            divGrade = document.createElement('div');
+                            divGrade.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; flex-grow: 1; padding: 10px; border: 1px solid #000; margin-top: 5px; box-sizing: border-box; height: 260mm;';
+                            
+                            divFolha.appendChild(divGrade);
+                            anexoContainer.appendChild(divFolha);
+                        }
+
+                        const divImg = document.createElement('div');
+                        divImg.style.cssText = 'display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; padding: 5px; height: 100%; box-sizing: border-box;';
+                        divImg.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+                        divGrade.appendChild(divImg);
+
+                        imagensCarregadas++;
+                    }
+                    reader.readAsDataURL(file);
+                });
             }
-            
-            setTexto('out-pbruto', 'in-pbruto');
-            setTexto('out-pliquido', 'in-pliquido');
+        }
 
-            const radios = document.getElementsByName('empresa');
-            let emp = "";
-            for (let r of radios) { if (r.checked) emp = r.value; }
-            document.getElementById('out-sod').innerText = emp === "SODRAMAR" ? "X" : "";
-            document.getElementById('out-fil').innerText = emp === "FILTER UP" ? "X" : "";
-            document.getElementById('out-wel').innerText = emp === "WELD STEAM" ? "X" : "";
-            document.getElementById('out-sdr').innerText = emp === "SDR" ? "X" : "";
+        // --- SISTEMA DE INTEGRAÇÃO COM TRELLO ---
+        async function enviarParaTrello() {
+            const cvortex = getVal('in-cvortex');
+            const cliente = getVal('in-cliente');
+            const equipamento = getVal('in-equipamento');
+            const reclame = document.getElementById('in-reclame').value.trim().toUpperCase();
 
-            document.getElementById('out-ncm').innerText = formatarNCMStr(getVal('in-ncm'));
+            const desc = `**1. DADOS DO ATENDIMENTO**\n- **ID CVortex:** ${cvortex}\n- **Abertura do ID:** ${getVal('in-abertura-id')}\n- **Data Visita:** ${getVal('in-data-visita')}\n\n**2. DADOS DO CLIENTE / LOCAL**\n- **Cliente:** ${cliente}\n- **Endereço:** ${getVal('in-end')}\n- **Complemento:** ${getVal('in-complemento')}\n- **Condomínio:** ${getVal('in-condominio')}\n- **Distância:** ${getVal('in-distancia')} KM\n\n**3. EQUIPAMENTO E DOCUMENTAÇÃO**\n- **Código:** ${getVal('in-codigo')}\n- **Equipamento:** ${equipamento}\n- **Nota Fiscal:** ${getVal('in-nf')}\n- **Orçamento:** ${getVal('in-orcamento')}\n\n**4. RECLAME / MOTIVO**\n${reclame}`;
+
+            const tituloCard = `[OAT] ${cvortex} - ${cliente} - ${equipamento}`;
+
+            // 1. Criar o Cartão Base
+            const urlCriar = `https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`;
+            const resCriar = await fetch(urlCriar, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    idList: TRELLO_LIST_ID,
+                    name: tituloCard,
+                    desc: desc,
+                    pos: 'top'
+                })
+            });
+
+            if (!resCriar.ok) {
+                const erroTexto = await resCriar.text();
+                throw new Error(`Erro do Trello: ${erroTexto}`);
+            }
+
+            const cardData = await resCriar.json();
+            const cardId = cardData.id;
+
+            // 2. Enviar Arquivos Anexos um por um
+            const files = document.getElementById('in-anexo').files;
+            if (files && files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    const formData = new FormData();
+                    formData.append('file', files[i]);
+                    formData.append('name', files[i].name);
+
+                    const urlAnexo = `https://api.trello.com/1/cards/${cardId}/attachments?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`;
+                    await fetch(urlAnexo, { method: 'POST', body: formData });
+                }
+            }
+        }
+
+        // --- GATILHO PRINCIPAL (TRELLO + IMPRESSÃO) ---
+        async function prepararImpressao() {
+            const btn = document.getElementById('btn-imprimir');
+            const statusDiv = document.getElementById('status-db');
+            const textoOriginal = btn.innerText;
+
+            btn.disabled = true;
+            btn.innerText = "⏳ ENVIANDO PARA O TRELLO...";
             
-            setTexto('out-ipi', 'in-ipi');
-            setTexto('out-st', 'in-st');
-            setTexto('out-descncm', 'in-descncm');
-            setTexto('out-codsim', 'in-codsim');
-            
-            document.getElementById('out-ncmsim').innerText = formatarNCMStr(getVal('in-ncmsim'));
-            
-            setTexto('out-motivo', 'in-motivo');
+            statusDiv.style.display = 'block';
+            statusDiv.className = "";
+            statusDiv.style.backgroundColor = "#cce5ff";
+            statusDiv.style.color = "#004085";
+            statusDiv.style.border = "1px solid #b8daff";
+            statusDiv.innerText = "⏳ Criando cartão no Trello e anexando fotos. Por favor, aguarde...";
+
+            try {
+                await enviarParaTrello();
+                
+                statusDiv.className = "status-ok";
+                statusDiv.innerText = "✅ Cartão criado no Trello com sucesso! Abrindo PDF...";
+                
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                    btn.innerText = textoOriginal;
+                    btn.disabled = false;
+                    window.print();
+                }, 1500);
+
+            } catch (error) {
+                console.error(error);
+                statusDiv.className = "status-erro";
+                statusDiv.innerText = "❌ ERRO NO TRELLO: " + error.message;
+                
+                // Exibe o Pop-Up que impede a página de imprimir antes que o utilizador veja o erro
+                alert("⚠️ FALHA NA INTEGRAÇÃO TRELLO\n\nO Trello recusou a criação do cartão. Erro retornado:\n" + error.message + "\n\nO seu PDF vai ser gerado normalmente a seguir.");
+
+                btn.innerText = textoOriginal;
+                btn.disabled = false;
+
+                // Continua para a impressão logo após clicar OK no erro
+                window.print();
+            }
         }
 
         window.onload = function() {
             carregarBancoDeDados();
-            verificarRegrasTipo();
             atualizar();
         };
     </script>
