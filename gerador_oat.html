@@ -197,7 +197,7 @@
                 <div class="form-grupo">
                     <label>Fotos do Equip. e Instalação <span class="obrigatorio">*</span></label>
                     <input type="file" id="in-anexo" accept="image/*" multiple onchange="carregarImagens(event)" required>
-                    <small style="color: #666; font-size: 10px;">Selecione várias fotos. O sistema criará até 4 por página.</small>
+                    <small style="color: #666; font-size: 10px;">Selecione várias fotos. O sistema criará até 4 por página e enviará para o Trello.</small>
                 </div>
             </fieldset>
 
@@ -287,7 +287,14 @@
     </div>
 
     <script>
-        // Novo Link de banco de dados
+        // =========================================================
+        // CONFIGURAÇÕES DO TRELLO (PREENCHA O TOKEN E A LISTA)
+        // =========================================================
+        const TRELLO_KEY = 'bdcd417a43c74f690ac0a386212ccd4e';
+        const TRELLO_TOKEN = 'ATTA2d5774a0acebe439f927e5e4ddef48a48c3169b312b86b71a041c3113108d587CE4D0672';
+        const TRELLO_LIST_ID = '6a46a8acf5174d9fe6a3353d';
+        // =========================================================
+
         const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzlusRBsDUfFkT1UHUTX7ldGgyiQvp4iGAzhexNSwMf8qHrnjSoGUPcGj3UIwYdwuwiog/exec";
         let dbLocal = {};
 
@@ -463,9 +470,118 @@
             }
         }
 
-        function prepararImpressao(event) {
-            event.preventDefault();
-            window.print();
+        // --- SISTEMA DE INTEGRAÇÃO COM TRELLO ---
+        async function enviarParaTrello() {
+            if (!TRELLO_TOKEN || !TRELLO_LIST_ID) {
+                throw new Error("Token do Trello ou ID da Lista ausentes no código.");
+            }
+
+            const cvortex = getVal('in-cvortex');
+            const cliente = getVal('in-cliente');
+            const equipamento = getVal('in-equipamento');
+            const reclame = document.getElementById('in-reclame').value.trim().toUpperCase();
+
+            // Formatação do Cartão em Markdown (Estilo de texto do Trello)
+            const desc = `
+**1. DADOS DO ATENDIMENTO**
+- **ID CVortex:** ${cvortex}
+- **Abertura do ID:** ${getVal('in-abertura-id')}
+- **Data Visita:** ${getVal('in-data-visita')}
+
+**2. DADOS DO CLIENTE / LOCAL**
+- **Cliente:** ${cliente}
+- **Endereço:** ${getVal('in-end')}
+- **Complemento:** ${getVal('in-complemento')}
+- **Condomínio:** ${getVal('in-condominio')}
+- **Distância:** ${getVal('in-distancia')} KM
+
+**3. EQUIPAMENTO E DOCUMENTAÇÃO**
+- **Código:** ${getVal('in-codigo')}
+- **Equipamento:** ${equipamento}
+- **Nota Fiscal:** ${getVal('in-nf')}
+- **Orçamento:** ${getVal('in-orcamento')}
+
+**4. RECLAME / MOTIVO**
+${reclame}
+`;
+
+            const tituloCard = `[OAT] ${cvortex} - ${cliente} - ${equipamento}`;
+
+            // 1. Criar o Cartão Base
+            const urlCriar = `https://api.trello.com/1/cards?idList=${TRELLO_LIST_ID}&key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`;
+            const resCriar = await fetch(urlCriar, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: tituloCard,
+                    desc: desc,
+                    pos: 'top'
+                })
+            });
+
+            if (!resCriar.ok) throw new Error("Falha ao comunicar com API do Trello (Criar Cartão).");
+            const cardData = await resCriar.json();
+            const cardId = cardData.id;
+
+            // 2. Enviar Arquivos Anexos um por um
+            const files = document.getElementById('in-anexo').files;
+            if (files && files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    const formData = new FormData();
+                    formData.append('file', files[i]);
+                    formData.append('name', files[i].name);
+
+                    const urlAnexo = `https://api.trello.com/1/cards/${cardId}/attachments?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`;
+                    await fetch(urlAnexo, { method: 'POST', body: formData });
+                }
+            }
+            
+            return true;
+        }
+
+        // --- GATILHO PRINCIPAL (TRELLO + IMPRESSÃO) ---
+        async function prepararImpressao(event) {
+            event.preventDefault(); // Impede o recarregamento automático da página
+            
+            const btn = document.getElementById('btn-imprimir');
+            const statusDiv = document.getElementById('status-db');
+            const textoOriginal = btn.innerText;
+
+            // Altera UI para modo de carregamento
+            btn.disabled = true;
+            btn.innerText = "⏳ SALVANDO E PROCESSANDO TRELLO...";
+            
+            statusDiv.style.display = 'block';
+            statusDiv.className = "";
+            statusDiv.style.backgroundColor = "#cce5ff";
+            statusDiv.style.color = "#004085";
+            statusDiv.style.border = "1px solid #b8daff";
+            statusDiv.innerText = "⏳ Criando cartão no Trello e anexando fotos. Por favor, aguarde...";
+
+            try {
+                if (TRELLO_TOKEN && TRELLO_LIST_ID) {
+                    await enviarParaTrello();
+                    statusDiv.className = "status-ok";
+                    statusDiv.innerText = "✅ Cartão criado no Trello com sucesso! Preparando PDF...";
+                } else {
+                    statusDiv.className = "status-erro";
+                    statusDiv.innerText = "⚠️ O cartão não foi gerado. Faltou configurar o TRELLO_TOKEN e/ou o TRELLO_LIST_ID no código.";
+                }
+            } catch (error) {
+                console.error(error);
+                statusDiv.className = "status-erro";
+                statusDiv.innerText = "❌ Ocorreu um erro ao enviar para o Trello. O PDF será gerado normalmente.";
+            }
+
+            // Restaura o botão
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
+
+            // Aguarda 1.5 segundos para o utilizador ver a mensagem e abre a aba de Impressão
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+                window.print();
+            }, 1500);
         }
 
         window.onload = function() {
