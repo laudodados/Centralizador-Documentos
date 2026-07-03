@@ -80,7 +80,7 @@
 <body>
 
     <div class="painel-lateral">
-        <h1>Ficha de Criação de Códigos</h1>
+        <h1>Ficha de Criação de Códigos <button type="button" onclick="carregarBancoDeDados(true)" style="float: right; font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff; color: #333;">🔄 Atualizar</button></h1>
         <div id="status-db">⏳ Conectando à base de dados...</div>
 
         <form id="formFicha">
@@ -386,14 +386,48 @@
     </div>
 
     <script>
-        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbxg31ghH-Xb2XcgcxHrhZPt2ATFh79B4ekd7CE4WtRGFCZEcYbGmPojK-hmyCxlASwd/exec";
+        // Novo Link de banco de dados específico para Sol.AB
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyOTdpPB8q4DTelfleOsQLdH1bnGLB02p718ePEFTvNHZabX4_L1GoStPxmSHMLHlD0/exec";
         
         let dbLocal = [];
 
-        function carregarBancoDeDados() {
+        // --- SISTEMA DE CACHE E BANCO DE DADOS ROBUSTO ---
+        function carregarBancoDeDados(forcarAtualizacao = false) {
             const statusDiv = document.getElementById('status-db');
+            if(statusDiv) statusDiv.style.display = 'block';
+
+            const cacheKey = 'dbSodramar_solab_v12';
+            const cacheTimeKey = 'dbSodramar_time_solab_v12';
+            const cacheVal = localStorage.getItem(cacheKey);
+            const cacheTime = localStorage.getItem(cacheTimeKey);
+            const agora = new Date().getTime();
+
+            if (!forcarAtualizacao && cacheVal && cacheTime && (agora - cacheTime < 43200000)) {
+                dbLocal = JSON.parse(cacheVal);
+                if(statusDiv) {
+                    statusDiv.innerText = `⚡ Banco carregado rapidamente (${dbLocal.length} registros).`;
+                    statusDiv.className = "status-ok";
+                    setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+                }
+                return;
+            }
+
+            if(statusDiv) {
+                statusDiv.innerText = "⏳ Conectando à nuvem. Pode levar alguns segundos...";
+                statusDiv.className = "";
+                statusDiv.style.backgroundColor = "#fff3cd";
+            }
+
             fetch(URL_PLANILHA)
-                .then(r => r.json())
+                .then(async r => {
+                    const texto = await r.text();
+                    try {
+                        return JSON.parse(texto);
+                    } catch (e) {
+                        console.error("Erro do Google (bloqueio HTML):", texto.substring(0, 100));
+                        throw new Error("O Google bloqueou a rede ou o link está incorreto.");
+                    }
+                })
                 .then(data => {
                     dbLocal = [];
                     for (let i = 0; i < data.length; i++) {
@@ -405,13 +439,20 @@
                         });
                     }
                     
-                    statusDiv.innerText = `✅ Banco de dados conectado (${dbLocal.length} registros).`;
-                    statusDiv.className = "status-ok";
-                    setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+                    localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
+                    localStorage.setItem(cacheTimeKey, agora.toString());
+
+                    if(statusDiv) {
+                        statusDiv.innerText = `✅ Banco de dados conectado (${dbLocal.length} registros).`;
+                        statusDiv.className = "status-ok";
+                        setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+                    }
                 }).catch(e => {
                     console.error(e);
-                    statusDiv.innerText = "❌ Erro ao conectar. Verifique a URL do script.";
-                    statusDiv.className = "status-erro";
+                    if(statusDiv) {
+                        statusDiv.innerText = "❌ Erro ao conectar. Falha de rede ou link bloqueado.";
+                        statusDiv.className = "status-erro";
+                    }
                 });
         }
 
