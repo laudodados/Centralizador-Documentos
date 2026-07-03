@@ -384,8 +384,7 @@
     </div>
 
     <script>
-        // Link fornecido para Sol.AB
-        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyOTdpPB8q4DTelfleOsQLdH1bnGLB02p718ePEFTvNHZabX4_L1GoStPxmSHMLHlD0/exec";
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbxg31ghH-Xb2XcgcxHrhZPt2ATFh79B4ekd7CE4WtRGFCZEcYbGmPojK-hmyCxlASwd/exec";
         
         let dbLocal = [];
 
@@ -417,7 +416,7 @@
                 statusDiv.style.backgroundColor = "#fff3cd";
             }
 
-            fetch(URL_PLANILHA)
+            fetch(URL_PLANILHA, { redirect: 'follow' })
                 .then(async r => {
                     const texto = await r.text();
                     try {
@@ -456,7 +455,7 @@
                 }).catch(e => {
                     console.error(e);
                     if(statusDiv) {
-                        statusDiv.innerText = "❌ " + e.message;
+                        statusDiv.innerText = "❌ Falha: " + e.message;
                         statusDiv.className = "status-erro";
                     }
                 });
