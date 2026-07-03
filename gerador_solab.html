@@ -37,7 +37,7 @@
         .caixa-radios { border: 1px solid var(--cor-borda); padding: 8px; border-radius: 4px; display: flex; flex-wrap: wrap; gap: 10px; background-color: #f8f9fa; }
         .caixa-radios label { display: flex; align-items: center; gap: 5px; font-size: 11px; cursor: pointer; }
 
-        .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: margin-top: 10px; font-size: 14px; transition: 0.2s; cursor: pointer; }
+        .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; transition: 0.2s; }
         .btn-acao:hover { background-color: #218838; }
 
         .container-similares { margin-top: 10px; padding: 10px; background-color: #e9ecef; border-radius: 5px; border: 1px solid #adb5bd; display: none; max-height: 200px; overflow-y: auto; }
@@ -384,31 +384,15 @@
     </div>
 
     <script>
-        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbwRZnW0UAkL8I9zd-pc5FPgOESlIZlhthVCuYi4x5Mqn6nxrkauylyYxp1GpoXpcRaz/exec";
+        // O seu novo Link da Planilha
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyOTdpPB8q4DTelfleOsQLdH1bnGLB02p718ePEFTvNHZabX4_L1GoStPxmSHMLHlD0/exec";
         
         let dbLocal = [];
 
-        // --- SISTEMA DE LEITURA UNIVERSAL E ANTI-FALHAS ---
+        // --- SISTEMA ORIGINAL (EXATAMENTE COMO ESTAVA A FUNCIONAR) ---
         function carregarBancoDeDados(forcarAtualizacao = false) {
             const statusDiv = document.getElementById('status-db');
             if(statusDiv) statusDiv.style.display = 'block';
-
-            // Cache versão 16 para forçar limpeza completa do navegador
-            const cacheKey = 'dbSodramar_solab_v16';
-            const cacheTimeKey = 'dbSodramar_time_solab_v16';
-            const cacheVal = localStorage.getItem(cacheKey);
-            const cacheTime = localStorage.getItem(cacheTimeKey);
-            const agora = new Date().getTime();
-
-            if (!forcarAtualizacao && cacheVal && cacheTime && (agora - cacheTime < 43200000)) {
-                dbLocal = JSON.parse(cacheVal);
-                if(statusDiv) {
-                    statusDiv.innerText = `⚡ Banco carregado rapidamente (${dbLocal.length} registros).`;
-                    statusDiv.className = "status-ok";
-                    setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
-                }
-                return;
-            }
 
             if(statusDiv) {
                 statusDiv.innerText = "⏳ Conectando à nuvem. Pode levar alguns segundos...";
@@ -416,37 +400,23 @@
                 statusDiv.style.backgroundColor = "#fff3cd";
             }
 
-            fetch(URL_PLANILHA, { redirect: 'follow' })
-                .then(async r => {
-                    const texto = await r.text();
-                    try {
-                        return JSON.parse(texto);
-                    } catch (e) {
-                        throw new Error("O Google bloqueou a rede ou o formato é inválido. Retorno: " + texto.substring(0, 60));
-                    }
-                })
+            // O clássico fetch que estava a funcionar
+            fetch(URL_PLANILHA)
+                .then(r => r.json())
                 .then(data => {
-                    if (data.erro) {
-                        throw new Error(data.error || "Erro retornado pelo script do Google.");
-                    }
-                    
                     dbLocal = [];
-                    
-                    // MOTOR UNIVERSAL: Lida com Listas ou Objetos
+                    // Adaptado para ler quer seja um Array direto quer seja Objeto
                     let registros = Array.isArray(data) ? data : Object.values(data);
                     
-                    registros.forEach(item => {
+                    for (let i = 0; i < registros.length; i++) {
                         dbLocal.push({
-                            codigo: String(item.codigo || item.cod || '').trim().toUpperCase(),
-                            desc: item.descricao || item.desc || '',
-                            ncm: item.ncm || '',
-                            descNcm: item.desc_ncm || item.descncm || ''
+                            codigo: String(registros[i].codigo || registros[i].Codigo || registros[i].cod || '').trim().toUpperCase(),
+                            desc: registros[i].descricao || registros[i].Descricao || registros[i].desc || '',
+                            ncm: registros[i].ncm || registros[i].NCM || '',
+                            descNcm: registros[i].desc_ncm || registros[i].DescricaoNCM || registros[i].descncm || ''
                         });
-                    });
+                    }
                     
-                    localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
-                    localStorage.setItem(cacheTimeKey, agora.toString());
-
                     if(statusDiv) {
                         statusDiv.innerText = `✅ Banco de dados conectado (${dbLocal.length} registros).`;
                         statusDiv.className = "status-ok";
@@ -455,7 +425,7 @@
                 }).catch(e => {
                     console.error(e);
                     if(statusDiv) {
-                        statusDiv.innerText = "❌ Falha: " + e.message;
+                        statusDiv.innerText = "❌ Erro ao conectar. Verifique a URL do script.";
                         statusDiv.className = "status-erro";
                     }
                 });
