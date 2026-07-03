@@ -19,7 +19,6 @@
         .painel-lateral { width: 500px; padding: 20px; overflow-y: auto; background-color: var(--cor-card); border-right: 1px solid var(--cor-borda); box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         .painel-lateral h1 { font-size: 18px; color: var(--cor-primaria); margin-top: 0; border-bottom: 2px solid var(--cor-primaria); padding-bottom: 10px; }
         
-        /* Indicador de carregamento do DB */
         #status-db { font-size: 12px; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .status-ok { background-color: #d4edda !important; color: #155724 !important; border-color: #c3e6cb !important; }
         .status-erro { background-color: #f8d7da !important; color: #721c24 !important; border-color: #f5c6cb !important; }
@@ -29,13 +28,11 @@
         input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--cor-borda); border-radius: 4px; font-size: 12px; box-sizing: border-box; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--cor-primaria); box-shadow: 0 0 0 2px rgba(0,91,187,0.2); }
         
-        /* Sistema de Travamento */
         input:disabled, select:disabled, button:disabled, textarea:disabled { background-color: #e9ecef; cursor: not-allowed; opacity: 0.7; }
 
         .linha { display: flex; gap: 10px; }
         .linha > div { flex: 1; }
 
-        /* Botões de Ação e Dinâmicos */
         .btn-acao { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 14px; }
         .btn-acao:hover:not(:disabled) { background-color: #218838; }
 
@@ -47,12 +44,10 @@
         .btn-remove { background-color: #dc3545; color: white; border: none; border-radius: 4px; padding: 4px 10px; font-size: 14px; font-weight: bold; cursor: pointer; height: 100%; display: flex; align-items: center; justify-content: center; width: 35px; }
         .btn-remove:hover:not(:disabled) { background-color: #c82333; }
 
-        /* Blocos das Linhas Dinâmicas */
         .linha-dinamica { border: 1px solid #ddd; padding: 8px; border-radius: 5px; margin-bottom: 8px; background-color: #fff; position: relative; }
         .linha-dinamica .btn-remove { position: absolute; right: 8px; top: 8px; padding: 4px; width: 25px; height: 25px; }
         .linha-dinamica-conteudo { padding-right: 35px; } 
 
-        /* Caixa de Checkboxes Dinâmica */
         .caixa-checkboxes { border: 1px solid var(--cor-borda); padding: 8px 10px; border-radius: 4px; background: #fff; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; min-height: 35px; box-sizing: border-box; }
         .caixa-checkboxes label { font-weight: normal; display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 0; cursor: pointer; }
         .caixa-checkboxes input[type="checkbox"] { width: auto; margin: 0; }
@@ -63,8 +58,6 @@
         .folha-a4 {
             width: 210mm; min-height: 297mm; padding: 10mm 15mm; box-sizing: border-box; box-shadow: 0 0 15px rgba(0,0,0,0.5);
             font-family: Arial, sans-serif; color: #000; font-size: 11px; display: flex; flex-direction: column;
-            
-            /* SIMULADOR DE QUEBRA DE PÁGINA (Exibição em Tela) */
             background-color: white;
             background-image: linear-gradient(to bottom, #ffffff 293mm, #525659 293mm, #525659 297mm);
             background-size: 100% 297mm;
@@ -101,7 +94,6 @@
         .tabela-exclusao th { background-color: #f5c6cb !important; }
         .tabela-inclusao th { background-color: #c3e6cb !important; }
 
-        /* BLOCO DO MOTIVO */
         .caixa-motivo { border: 1px solid #000; margin-bottom: 10px; display: flex; flex-direction: column; page-break-inside: avoid; }
         .titulo-motivo { background-color: #e0e0e0; font-weight: bold; font-style: italic; text-align: center; padding: 3px; font-size: 11px; border-bottom: 1px solid #000; }
         .conteudo-motivo { background-color: #fff200; font-weight: bold; font-style: italic; text-decoration: underline; text-align: center; padding: 8px; font-size: 11px; text-transform: uppercase; min-height: 14px; }
@@ -115,18 +107,14 @@
         .titulo-pcp { background-color: #000; color: #fff; font-weight: bold; text-align: center; padding: 3px; font-size: 11px; }
         .conteudo-pcp { padding: 5px; }
 
-        /* --- CONFIGURAÇÕES PARA EVITAR CORTES NO PDF E QUEBRAR PÁGINAS CORRETAMENTE --- */
         @media print {
             body { background: none; margin: 0; padding: 0; height: auto; }
             .painel-lateral { display: none; }
             .painel-preview { display: block; padding: 0; overflow: visible; background: none; }
-            
             .folha-a4 { box-shadow: none; margin: 0; padding: 10mm; width: 100%; height: auto; min-height: 100vh; display: block !important; background: #ffffff !important; }
-            
             table { page-break-inside: auto; }
             tr { page-break-inside: avoid; page-break-after: auto; }
             .titulo-secao, .caixa-perguntas, .caixa-pcp, .caixa-motivo { page-break-inside: avoid; }
-
             .titulo-secao { background-color: #e0e0e0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .secao-exclusao { background-color: #f8d7da !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .secao-inclusao { background-color: #d4edda !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -327,7 +315,7 @@
     </div>
 
     <script>
-        // Novo Link de banco de dados unificado
+        // Link fornecido para SAE
         const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzlusRBsDUfFkT1UHUTX7ldGgyiQvp4iGAzhexNSwMf8qHrnjSoGUPcGj3UIwYdwuwiog/exec";
         let dbLocal = {};
 
@@ -336,14 +324,15 @@
             elementos.forEach(el => el.disabled = estadoDesabilitado);
         }
 
-        // --- SISTEMA DE CACHE E BANCO DE DADOS PROTEGIDO CONTRA ERRO HTML DO GITHUB ---
+        // --- SISTEMA DE LEITURA UNIVERSAL (ARRAY E OBJETOS) ---
         function carregarBancoDeDados(forcarAtualizacao = false) {
             setEstadoFormulario(true);
             const statusDiv = document.getElementById('status-db');
             statusDiv.style.display = 'block';
 
-            const cacheKey = 'dbSodramar_sae_v12';
-            const cacheTimeKey = 'dbSodramar_time_sae_v12';
+            // Cache v16 para forçar limpeza completa do navegador
+            const cacheKey = 'dbSodramar_sae_v16';
+            const cacheTimeKey = 'dbSodramar_time_sae_v16';
             const cacheVal = localStorage.getItem(cacheKey);
             const cacheTime = localStorage.getItem(cacheTimeKey);
             const agora = new Date().getTime();
@@ -359,7 +348,6 @@
                     addEnvolvido('PRODUÇÃO', 'RUBENS GOMES');
                     addEnvolvido('LABORATÓRIO', 'CLEITON FRANK (SOLICITADO)');
                 }
-
                 setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
                 atualizar();
                 return;
@@ -375,16 +363,23 @@
                     try {
                         return JSON.parse(texto);
                     } catch (e) {
-                        console.error("Erro do Google (bloqueio HTML):", texto.substring(0, 100));
-                        throw new Error("O Google bloqueou a rede ou o link está incorreto.");
+                        throw new Error("O Google bloqueou a rede ou o formato é inválido. Retorno: " + texto.substring(0, 60));
                     }
                 })
                 .then(data => {
                     if (data.erro) {
-                        statusDiv.innerText = "❌ Erro ao conectar com o banco de dados.";
-                        statusDiv.className = "status-erro";
+                        throw new Error(data.error || "Erro retornado pelo script do Google.");
                     } else {
-                        dbLocal = data;
+                        // MOTOR DE LEITURA UNIVERSAL
+                        dbLocal = {};
+                        let registros = Array.isArray(data) ? data : Object.values(data);
+                        
+                        registros.forEach(item => {
+                            // Suporta códigos vindos como "codigo", "cod" ou "id"
+                            let k = String(item.codigo || item.cod || item.id || '').trim().toUpperCase();
+                            if(k) dbLocal[k] = item;
+                        });
+
                         localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
                         localStorage.setItem(cacheTimeKey, agora.toString());
 
@@ -397,20 +392,19 @@
                             addEnvolvido('PRODUÇÃO', 'RUBENS GOMES');
                             addEnvolvido('LABORATÓRIO', 'CLEITON FRANK (SOLICITADO)');
                         }
-
                         setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
                         atualizar();
                     }
                 })
                 .catch(error => {
-                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os dados.";
+                    statusDiv.innerText = "❌ Falha: " + error.message;
                     statusDiv.className = "status-erro";
                     setEstadoFormulario(false);
                     console.error(error);
                 });
         }
 
-        // --- SISTEMA DE LINHAS DINÂMICAS (+ / -) PARA PRODUTOS ---
+        // --- SISTEMA DE LINHAS DINÂMICAS ---
         function addLinha(tipo) {
             const container = document.getElementById(`container-${tipo}`);
             const div = document.createElement('div');
@@ -454,7 +448,6 @@
             atualizar();
         }
 
-        // --- SISTEMA DE LINHAS DINÂMICAS PARA ENVOLVIDOS ---
         function addEnvolvido(setor = '', resp = '') {
             const container = document.getElementById('container-envolvidos');
             const div = document.createElement('div');
@@ -478,9 +471,8 @@
             atualizar();
         }
 
-        // --- CONSULTA INSTANTÂNEA E LIMPEZA AO APAGAR ---
         function buscarProduto(inputElement) {
-            let cod = inputElement.value.trim();
+            let cod = inputElement.value.trim().toUpperCase();
             let row = inputElement.closest('.linha-dinamica');
             if (!row) return;
 
@@ -488,7 +480,6 @@
             let inTipo = row.querySelector('.in-tipo');
             let inUnid = row.querySelector('.in-unid');
 
-            // Lógica de Limpeza
             if (cod === "") {
                 if(inDesc) inDesc.value = "";
                 if(inTipo) inTipo.value = "";
@@ -499,7 +490,7 @@
 
             let produto = dbLocal[cod];
             if (produto) {
-                if(inDesc) inDesc.value = produto.desc || "";
+                if(inDesc) inDesc.value = produto.desc || produto.descricao || "";
                 if(inTipo) inTipo.value = produto.tipo || "";
                 if(inUnid) inUnid.value = produto.unid || "";
                 atualizar(); 
@@ -662,7 +653,6 @@
 
         window.onload = function() {
             carregarBancoDeDados();
-            
             const campoData = document.getElementById('in-data');
             if(!campoData.value) {
                 const hoje = new Date();
