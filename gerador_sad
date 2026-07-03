@@ -191,7 +191,7 @@
             
             <!-- CABEÇALHO -->
             <div class="cabecalho-sad">
-                <div class="cab-logo"><img src="./logo.png" alt="Sodramar"></div>
+                <div class="cab-logo"><img src="./logo.png" alt="Sodramar" onerror="this.style.display='none'"></div>
                 <div class="cab-titulo">SAD - SOLICITAÇÃO DE ALTERAÇÃO DE DESENHO</div>
                 <div class="cab-numero">Nº:<br><span id="out-sad-num"></span></div>
             </div>
@@ -277,8 +277,8 @@
     </div>
 
     <script>
-        // URL da API do seu Google Apps Script
-        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbwR_CkY_ZL9Rw74BcEHWyt5zxH75gXBykvx8XWLzLjTgbRMehgUSdnaR9HcYiIT-zhPrA/exec";
+        // Novo Link de banco de dados unificado
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzlusRBsDUfFkT1UHUTX7ldGgyiQvp4iGAzhexNSwMf8qHrnjSoGUPcGj3UIwYdwuwiog/exec";
         let dbLocal = {};
 
         function setEstadoFormulario(estadoDesabilitado) {
@@ -286,19 +286,18 @@
             elementos.forEach(el => el.disabled = estadoDesabilitado);
         }
 
+        // --- SISTEMA DE CACHE E BANCO DE DADOS ROBUSTO ---
         function carregarBancoDeDados(forcarAtualizacao = false) {
             setEstadoFormulario(true);
             const statusDiv = document.getElementById('status-db');
             statusDiv.style.display = 'block';
 
-            // Sistema de Cache para carregar instantaneamente
-            const cacheKey = 'dbSodramar_sad';
-            const cacheTimeKey = 'dbSodramar_time_sad';
+            const cacheKey = 'dbSodramar_sad_v12';
+            const cacheTimeKey = 'dbSodramar_time_sad_v12';
             const cacheVal = localStorage.getItem(cacheKey);
             const cacheTime = localStorage.getItem(cacheTimeKey);
             const agora = new Date().getTime();
 
-            // Usa o cache se existir, não for forçado e for mais novo que 12 horas (43200000 ms)
             if (!forcarAtualizacao && cacheVal && cacheTime && (agora - cacheTime < 43200000)) {
                 dbLocal = JSON.parse(cacheVal);
                 statusDiv.innerText = `⚡ Banco carregado rapidamente (${Object.keys(dbLocal).length} itens).`;
@@ -313,14 +312,21 @@
             statusDiv.style.backgroundColor = "#fff3cd";
             
             fetch(URL_PLANILHA)
-                .then(response => response.json())
+                .then(async response => {
+                    const texto = await response.text();
+                    try {
+                        return JSON.parse(texto);
+                    } catch (e) {
+                        console.error("Erro do Google (bloqueio HTML):", texto.substring(0, 100));
+                        throw new Error("O Google bloqueou a rede ou o link está incorreto.");
+                    }
+                })
                 .then(data => {
                     if (data.erro) {
                         statusDiv.innerText = "❌ Erro ao conectar com o banco de dados.";
                         statusDiv.className = "status-erro";
                     } else {
                         dbLocal = data;
-                        // Salva no cache local do computador
                         localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
                         localStorage.setItem(cacheTimeKey, agora.toString());
 
@@ -331,7 +337,7 @@
                     }
                 })
                 .catch(error => {
-                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os produtos.";
+                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os dados.";
                     statusDiv.className = "status-erro";
                     console.error(error);
                 });
@@ -340,12 +346,8 @@
         function iniciarSistema() {
             setEstadoFormulario(false); 
 
-            // Só adiciona as linhas padrão se o formulário estiver vazio (evita duplicar ao clicar em atualizar)
             if(document.querySelectorAll('#container-desenhos .linha-dinamica').length === 0) {
-                // Linhas Padrões Iniciais
                 addLinha('desenhos');
-                
-                // Envolvidos Padrões
                 addEnvolvido('DESENVOLVIMENTO', 'DOUGLAS SOARES');
                 addEnvolvido('PRODUÇÃO', 'RUBENS GOMES');
                 addEnvolvido('PCP', 'WILLIANS');
@@ -382,7 +384,6 @@
             const div = document.createElement('div');
             div.className = 'linha-dinamica linha-envolvido';
             
-            // Caixa de Seleção para o Setor
             const opcoesSetor = ['DESENVOLVIMENTO', 'PRODUÇÃO', 'PCP', 'ENGENHARIA', 'QUALIDADE', 'ASSISTÊNCIA'];
             let selectHTML = `<select class="env-setor" onchange="atualizar()" style="flex:1;"><option value="">Selecione...</option>`;
             opcoesSetor.forEach(opt => {
@@ -428,14 +429,13 @@
             }
         }
 
-        // --- RENDERIZAÇÃO DA FOLHA A4 ---
         function getVal(id) {
             let el = document.getElementById(id);
             return el ? el.value.toUpperCase() : '';
         }
 
         function formatarData(input) {
-            let v = input.value.replace(/\\D/g, ''); 
+            let v = input.value.replace(/\D/g, ''); 
             if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
             if (v.length > 5) v = v.slice(0, 5) + '/' + v.slice(5, 9);
             input.value = v;
@@ -489,7 +489,7 @@
         function carregarImagens(event) {
             const files = event.target.files;
             const anexoContainer = document.getElementById('container-paginas-anexos');
-            anexoContainer.innerHTML = ''; // Limpa as imagens anteriores
+            anexoContainer.innerHTML = ''; 
 
             if (files && files.length > 0) {
                 Array.from(files).forEach((file, index) => {
