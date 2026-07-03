@@ -142,7 +142,7 @@
 <body>
 
     <div class="painel-lateral">
-        <h1>Gerador de SAE <button type="button" onclick="carregarBancoDeDados(true)" style="float: right; font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc; background: #fff; color: #333;">🔄 Atualizar Banco</button></h1>
+        <h1>Gerador de SAE</h1>
         
         <div id="status-db">⏳ Conectando à base de dados. Por favor, aguarde...</div>
 
@@ -327,94 +327,56 @@
     </div>
 
     <script>
-        // URL da API atualizada e protegida
-        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbzlusRBsDUfFkT1UHUTX7ldGgyiQvp4iGAzhexNSwMf8qHrnjSoGUPcGj3UIwYdwuwiog/exec";
+        // URL da API do seu Google Apps Script
+        const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbwR_CkY_ZL9Rw74BcEHWyt5zxH75gXBykvx8XWLzLjTgbRMehgUSdnaR9HcYiIT-zhPrA/exec";
         let dbLocal = {};
 
+        // --- CONTROLE DE ACESSO (TRAVAR/DESTRAVAR) ---
         function setEstadoFormulario(estadoDesabilitado) {
             const elementos = document.querySelectorAll('#formSAE input, #formSAE select, #formSAE button, #formSAE textarea');
             elementos.forEach(el => el.disabled = estadoDesabilitado);
         }
 
-        // --- SISTEMA DE LEITURA UNIVERSAL E ANTI-FALHAS ---
-        function carregarBancoDeDados(forcarAtualizacao = false) {
+        // --- PRÉ-CARREGAMENTO ---
+        function carregarBancoDeDados() {
             setEstadoFormulario(true);
+
             const statusDiv = document.getElementById('status-db');
-            statusDiv.style.display = 'block';
-
-            // Cache v16 para forçar limpeza completa do navegador
-            const cacheKey = 'dbSodramar_sae_v16';
-            const cacheTimeKey = 'dbSodramar_time_sae_v16';
-            const cacheVal = localStorage.getItem(cacheKey);
-            const cacheTime = localStorage.getItem(cacheTimeKey);
-            const agora = new Date().getTime();
-
-            if (!forcarAtualizacao && cacheVal && cacheTime && (agora - cacheTime < 43200000)) {
-                dbLocal = JSON.parse(cacheVal);
-                statusDiv.innerText = `⚡ Banco carregado rapidamente (${Object.keys(dbLocal).length} itens).`;
-                statusDiv.className = "status-ok";
-                setEstadoFormulario(false);
-                
-                if(document.querySelectorAll('#container-pe .linha-dinamica').length === 0) {
-                    addLinha('pe'); addLinha('ex'); addLinha('in');
-                    addEnvolvido('PRODUÇÃO', 'RUBENS GOMES');
-                    addEnvolvido('LABORATÓRIO', 'CLEITON FRANK (SOLICITADO)');
-                }
-                setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
-                atualizar();
-                return;
-            }
-
-            statusDiv.innerText = "⏳ Conectando à nuvem. Pode levar alguns segundos...";
-            statusDiv.className = "";
-            statusDiv.style.backgroundColor = "#fff3cd";
             
             fetch(URL_PLANILHA)
-                .then(async response => {
-                    const texto = await response.text();
-                    try {
-                        return JSON.parse(texto);
-                    } catch (e) {
-                        throw new Error("O Google bloqueou a rede ou o formato é inválido. Retorno: " + texto.substring(0, 60));
-                    }
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.erro) {
-                        throw new Error(data.error || "Erro retornado pelo script do Google.");
+                        statusDiv.innerText = "❌ Erro ao conectar com o banco de dados.";
+                        statusDiv.className = "status-erro";
                     } else {
-                        // MOTOR DE LEITURA UNIVERSAL
-                        dbLocal = {};
-                        let registros = Array.isArray(data) ? data : Object.values(data);
-                        
-                        registros.forEach(item => {
-                            let k = String(item.codigo || item.cod || item.id || '').trim().toUpperCase();
-                            if(k) dbLocal[k] = item;
-                        });
-
-                        localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
-                        localStorage.setItem(cacheTimeKey, agora.toString());
-
-                        statusDiv.innerText = `✅ Banco updated (${Object.keys(dbLocal).length} itens).`;
+                        dbLocal = data;
+                        statusDiv.innerText = `✅ Banco carregado (${Object.keys(dbLocal).length} itens). Formulário liberado!`;
                         statusDiv.className = "status-ok";
-                        setEstadoFormulario(false);
                         
-                        if(document.querySelectorAll('#container-pe .linha-dinamica').length === 0) {
-                            addLinha('pe'); addLinha('ex'); addLinha('in');
-                            addEnvolvido('PRODUÇÃO', 'RUBENS GOMES');
-                            addEnvolvido('LABORATÓRIO', 'CLEITON FRANK (SOLICITADO)');
-                        }
+                        setEstadoFormulario(false); 
+
+                        // Linhas padroes
+                        addLinha('pe');
+                        addLinha('ex');
+                        addLinha('in');
+                        
+                        // Duas linhas Iniciais de envolvidos
+                        addEnvolvido('PRODUÇÃO', 'RUBENS GOMES');
+                        addEnvolvido('LABORATÓRIO', 'CLEITON FRANK (SOLICITADO)');
+
                         setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
                         atualizar();
                     }
                 })
                 .catch(error => {
-                    statusDiv.innerText = "❌ Falha: " + error.message;
+                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os produtos.";
                     statusDiv.className = "status-erro";
-                    setEstadoFormulario(false);
                     console.error(error);
                 });
         }
 
+        // --- SISTEMA DE LINHAS DINÂMICAS (+ / -) PARA PRODUTOS ---
         function addLinha(tipo) {
             const container = document.getElementById(`container-${tipo}`);
             const div = document.createElement('div');
@@ -458,6 +420,7 @@
             atualizar();
         }
 
+        // --- SISTEMA DE LINHAS DINÂMICAS PARA ENVOLVIDOS ---
         function addEnvolvido(setor = '', resp = '') {
             const container = document.getElementById('container-envolvidos');
             const div = document.createElement('div');
@@ -481,8 +444,9 @@
             atualizar();
         }
 
+        // --- CONSULTA INSTANTÂNEA E LIMPEZA AO APAGAR ---
         function buscarProduto(inputElement) {
-            let cod = inputElement.value.trim().toUpperCase();
+            let cod = inputElement.value.trim();
             let row = inputElement.closest('.linha-dinamica');
             if (!row) return;
 
@@ -490,6 +454,7 @@
             let inTipo = row.querySelector('.in-tipo');
             let inUnid = row.querySelector('.in-unid');
 
+            // Lógica de Limpeza: se apagou o código, zera os outros campos
             if (cod === "") {
                 if(inDesc) inDesc.value = "";
                 if(inTipo) inTipo.value = "";
@@ -500,25 +465,29 @@
 
             let produto = dbLocal[cod];
             if (produto) {
-                if(inDesc) inDesc.value = produto.desc || produto.descricao || "";
+                if(inDesc) inDesc.value = produto.desc || "";
                 if(inTipo) inTipo.value = produto.tipo || "";
                 if(inUnid) inUnid.value = produto.unid || "";
                 atualizar(); 
             }
         }
 
+        // --- GERENCIAMENTO DE SELEÇÃO MULTIPLA DOS 'QUAIS ITENS' ---
         function atualizarOpcoesQuais() {
             const container = document.getElementById('container-quais-checkboxes');
-            const linesExclusao = document.querySelectorAll('#container-ex .linha-dinamica');
+            const linhasExclusao = document.querySelectorAll('#container-ex .linha-dinamica');
             let codigosValidos = [];
 
-            linesExclusao.forEach(row => {
+            // Puxa todos os códigos digitados na tabela de Itens Exclusos
+            linhasExclusao.forEach(row => {
                 const cod = row.querySelector('.in-cod').value.trim().toUpperCase();
                 if(cod) codigosValidos.push(cod);
             });
 
+            // Ordena os códigos para exibição nas checkboxes também!
             codigosValidos.sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
 
+            // 1. Remove as checkboxes de códigos que não estão mais lá (exceto a NENHUM)
             const labels = container.querySelectorAll('.label-cb-cod');
             labels.forEach(label => {
                 const cb = label.querySelector('input');
@@ -527,6 +496,7 @@
                 }
             });
 
+            // 2. Adiciona checkboxes para os códigos novos
             codigosValidos.forEach(cod => {
                 let existente = container.querySelector(`input[value="${cod}"]`);
                 if(!existente) {
@@ -537,6 +507,7 @@
                 }
             });
 
+            // 3. Verifica se sobrou algo marcado. Se não, marca NENHUM automaticamente.
             const marcados = container.querySelectorAll('input[type="checkbox"]:checked');
             if(marcados.length === 0) {
                 const cbNenhum = container.querySelector('input[value="NENHUM"]');
@@ -550,11 +521,14 @@
             const todosCbs = container.querySelectorAll('input[type="checkbox"]');
 
             if (clickedCb.value === 'NENHUM' && clickedCb.checked) {
+                // Se clicou em NENHUM, desmarca todos os outros
                 todosCbs.forEach(cb => { if(cb !== cbNenhum) cb.checked = false; });
             } else if (clickedCb.checked) {
+                // Se clicou em um código, desmarca o NENHUM
                 if(cbNenhum) cbNenhum.checked = false;
             }
 
+            // Garante que NENHUM volta se tudo for desmarcado
             const marcados = container.querySelectorAll('input[type="checkbox"]:checked');
             if (marcados.length === 0 && cbNenhum) {
                 cbNenhum.checked = true;
@@ -563,13 +537,14 @@
             atualizar();
         }
 
+        // --- SISTEMA DE GERAÇÃO E SINCRONIZAÇÃO A4 ---
         function getVal(id) {
             let el = document.getElementById(id);
             return el ? el.value.toUpperCase() : '';
         }
 
         function formatarData(input) {
-            let v = input.value.replace(/\D/g, ''); 
+            let v = input.value.replace(/\D/g, ''); // Remove tudo que não for número
             if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
             if (v.length > 5) v = v.slice(0, 5) + '/' + v.slice(5, 9);
             input.value = v;
@@ -591,12 +566,15 @@
                 return;
             }
 
+            // Transformar as linhas em um Array e ORDENAR pelo código de forma inteligente
+            // .localeCompare com {numeric: true} organiza "2" antes de "10"
             const rowsArray = Array.from(rowElements).sort((a, b) => {
                 const codA = (a.querySelector('.in-cod').value || '').trim().toUpperCase();
                 const codB = (b.querySelector('.in-cod').value || '').trim().toUpperCase();
                 return codA.localeCompare(codB, undefined, {numeric: true});
             });
 
+            // Iterar sobre o array agora ordenado
             rowsArray.forEach(row => {
                 const cod = (row.querySelector('.in-cod').value || '').toUpperCase();
                 const desc = (row.querySelector('.in-desc').value || '').toUpperCase();
@@ -620,17 +598,21 @@
         }
 
         function atualizar() {
+            // 1. Identificação
             setTexto('out-setor-emissor', 'in-setor-emissor');
             setTexto('out-sae-num', 'in-sae-num');
             setTexto('out-data', 'in-data');
             setTexto('out-solicitante', 'in-solicitante');
 
+            // 2, 3 e 4. Tabelas Dinâmicas (que agora são ordenadas internamente na função)
             renderizarTabela('pe', 'tbody-pe');
             renderizarTabela('ex', 'tbody-ex');
             renderizarTabela('in', 'tbody-in');
 
+            // 5. Motivo
             setTexto('out-motivo', 'in-motivo');
 
+            // 6. Questionários
             const bloq = document.getElementById('in-bloqueio').value;
             document.getElementById('chk-bloq-sim').innerText = bloq === 'SIM' ? 'X' : '';
             document.getElementById('chk-bloq-nao').innerText = bloq === 'NAO' ? 'X' : '';
@@ -641,9 +623,12 @@
 
             setTexto('out-saldo', 'in-saldo');
 
+            // Atualiza caixinhas visuais do Quais Itens
             atualizarOpcoesQuais();
 
+            // Imprime o resultado do "Quais itens" no PDF: Ex: [1453], [31931]
             const checkboxesQuais = document.querySelectorAll('#container-quais-checkboxes input[type="checkbox"]:checked');
+            // Como as opções foram criadas ordenadas, os itens selecionados também sairão ordenados
             let valsQuais = Array.from(checkboxesQuais).map(cb => cb.value);
 
             if (valsQuais.includes('NENHUM') || valsQuais.length === 0) {
@@ -652,17 +637,21 @@
                 document.getElementById('out-quais').innerText = valsQuais.map(v => `[${v}]`).join(', ');
             }
 
+            // 7. Envolvidos Rodapé
             const tbodyEnv = document.getElementById('tbody-envolvidos');
             tbodyEnv.innerHTML = '';
             document.querySelectorAll('.linha-envolvido').forEach(linha => {
-                const s = inline = linha.querySelector('.env-setor').value.toUpperCase();
+                const s = linha.querySelector('.env-setor').value.toUpperCase();
                 const r = linha.querySelector('.env-resp').value.toUpperCase();
                 tbodyEnv.innerHTML += `<tr><td>${s}</td><td>${r}</td><td></td><td></td></tr>`;
             });
         }
 
+        // Executa carregamento na inicialização
         window.onload = function() {
             carregarBancoDeDados();
+            
+            // Coloca a data de hoje automaticamente se estiver vazio
             const campoData = document.getElementById('in-data');
             if(!campoData.value) {
                 const hoje = new Date();
