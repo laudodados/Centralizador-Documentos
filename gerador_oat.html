@@ -203,7 +203,7 @@
             </fieldset>
 
             <button type="submit" class="btn-acao" id="btn-imprimir">🖨️ VALIDAR E GERAR PDF</button>
-            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.5 Trello Final ✅</div>
+            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.6 Trello + DB Original ✅</div>
         </form>
     </div>
 
@@ -298,7 +298,7 @@
         const TOKEN_B64 = 'QVRUQTJkNTc3NGEwYWNlYmU0MzlmOTI3ZTVlNGRkZWY0OGE0OGMzMTY5YjMxMmI4NmI3MWEwNDFjMzExMzEwOGQ1ODdDRTREMDY3Mg==';
         const TRELLO_TOKEN = atob(TOKEN_B64);
         
-        // ID exato da lista fornecido
+        // ID exato da lista
         const TRELLO_LIST_ID = '6a46a90ab98a5f14fccce9a9'; 
         // =========================================================
 
@@ -310,62 +310,23 @@
             elementos.forEach(el => el.disabled = estadoDesabilitado);
         }
 
-        // --- SISTEMA DE CACHE E BANCO DE DADOS (MOTOR UNIVERSAL PARA LER ARRAYS E OBJETOS) ---
+        // --- SISTEMA DE BANCO DE DADOS (VERSÃO ORIGINAL FUNCIONAL) ---
         function carregarBancoDeDados(forcarAtualizacao = false) {
             setEstadoFormulario(true);
             const statusDiv = document.getElementById('status-db');
             statusDiv.style.display = 'block';
-
-            // Versão 15 para garantir o update
-            const cacheKey = 'dbSodramar_oat_v15';
-            const cacheTimeKey = 'dbSodramar_time_oat_v15';
-            const cacheVal = localStorage.getItem(cacheKey);
-            const cacheTime = localStorage.getItem(cacheTimeKey);
-            const agora = new Date().getTime();
-
-            if (!forcarAtualizacao && cacheVal && cacheTime && (agora - cacheTime < 43200000)) {
-                dbLocal = JSON.parse(cacheVal);
-                statusDiv.innerText = `⚡ Banco carregado rapidamente (${Object.keys(dbLocal).length} itens).`;
-                statusDiv.className = "status-ok";
-                setEstadoFormulario(false);
-                setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
-                atualizar();
-                return;
-            }
-
             statusDiv.innerText = "⏳ Conectando à nuvem. Pode levar alguns segundos...";
             statusDiv.className = "";
             statusDiv.style.backgroundColor = "#fff3cd";
-            
-            fetch(URL_PLANILHA, { redirect: 'follow' })
-                .then(async response => {
-                    const texto = await response.text();
-                    try {
-                        return JSON.parse(texto);
-                    } catch (e) {
-                        throw new Error("O Google bloqueou a rede ou enviou formato inválido.");
-                    }
-                })
+
+            fetch(URL_PLANILHA)
+                .then(response => response.json())
                 .then(data => {
                     if (data.erro) {
-                        throw new Error(data.error || "Erro retornado pelo script do Google.");
+                        statusDiv.innerText = "❌ Erro ao conectar com o banco de dados.";
+                        statusDiv.className = "status-erro";
                     } else {
-                        // MOTOR DE LEITURA (Converte Array ou Objeto num Dicionário por Código)
-                        dbLocal = {};
-                        let registros = Array.isArray(data) ? data : Object.values(data);
-                        
-                        registros.forEach(item => {
-                            let k = String(item.codigo || item.cod || item.Codigo || item.CÓDIGO || item.id || '').trim().toUpperCase();
-                            if(k) {
-                                dbLocal[k] = {
-                                    desc: item.descicao || item.descricao || item.Descicao || item.Descricao || item.desc || ''
-                                };
-                            }
-                        });
-
-                        localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
-                        localStorage.setItem(cacheTimeKey, agora.toString());
-
+                        dbLocal = data;
                         statusDiv.innerText = `✅ Banco atualizado com sucesso (${Object.keys(dbLocal).length} itens).`;
                         statusDiv.className = "status-ok";
                         setEstadoFormulario(false);
@@ -374,9 +335,10 @@
                     }
                 })
                 .catch(error => {
-                    statusDiv.innerText = "❌ Falha de rede: " + error.message;
+                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os produtos.";
                     statusDiv.className = "status-erro";
                     setEstadoFormulario(false);
+                    console.error(error);
                 });
         }
 
@@ -402,8 +364,8 @@
             }
 
             let produto = dbLocal[cod];
-            if (produto && produto.desc) {
-                inEquip.value = produto.desc;
+            if (produto) {
+                inEquip.value = produto.desc || produto.descricao || produto.Descicao || produto.Descricao || "";
                 atualizar(); 
             }
         }
