@@ -203,7 +203,7 @@
             </fieldset>
 
             <button type="submit" class="btn-acao" id="btn-imprimir">🖨️ VALIDAR E GERAR PDF</button>
-            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.4 Trello Final ✅</div>
+            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.5 Trello Final ✅</div>
         </form>
     </div>
 
@@ -310,14 +310,15 @@
             elementos.forEach(el => el.disabled = estadoDesabilitado);
         }
 
-        // --- SISTEMA DE CACHE E BANCO DE DADOS ---
+        // --- SISTEMA DE CACHE E BANCO DE DADOS (MOTOR UNIVERSAL PARA LER ARRAYS E OBJETOS) ---
         function carregarBancoDeDados(forcarAtualizacao = false) {
             setEstadoFormulario(true);
             const statusDiv = document.getElementById('status-db');
             statusDiv.style.display = 'block';
 
-            const cacheKey = 'dbSodramar_oat_v10';
-            const cacheTimeKey = 'dbSodramar_time_oat_v10';
+            // Versão 15 para garantir o update
+            const cacheKey = 'dbSodramar_oat_v15';
+            const cacheTimeKey = 'dbSodramar_time_oat_v15';
             const cacheVal = localStorage.getItem(cacheKey);
             const cacheTime = localStorage.getItem(cacheTimeKey);
             const agora = new Date().getTime();
@@ -342,15 +343,26 @@
                     try {
                         return JSON.parse(texto);
                     } catch (e) {
-                        throw new Error("O Google bloqueou a rede.");
+                        throw new Error("O Google bloqueou a rede ou enviou formato inválido.");
                     }
                 })
                 .then(data => {
                     if (data.erro) {
-                        statusDiv.innerText = "❌ Erro ao conectar com o banco de dados.";
-                        statusDiv.className = "status-erro";
+                        throw new Error(data.error || "Erro retornado pelo script do Google.");
                     } else {
-                        dbLocal = data;
+                        // MOTOR DE LEITURA (Converte Array ou Objeto num Dicionário por Código)
+                        dbLocal = {};
+                        let registros = Array.isArray(data) ? data : Object.values(data);
+                        
+                        registros.forEach(item => {
+                            let k = String(item.codigo || item.cod || item.Codigo || item.CÓDIGO || item.id || '').trim().toUpperCase();
+                            if(k) {
+                                dbLocal[k] = {
+                                    desc: item.descicao || item.descricao || item.Descicao || item.Descricao || item.desc || ''
+                                };
+                            }
+                        });
+
                         localStorage.setItem(cacheKey, JSON.stringify(dbLocal));
                         localStorage.setItem(cacheTimeKey, agora.toString());
 
@@ -362,7 +374,7 @@
                     }
                 })
                 .catch(error => {
-                    statusDiv.innerText = "❌ Falha de rede ao tentar baixar os produtos.";
+                    statusDiv.innerText = "❌ Falha de rede: " + error.message;
                     statusDiv.className = "status-erro";
                     setEstadoFormulario(false);
                 });
@@ -380,7 +392,7 @@
         }
 
         function buscarProduto(inputElement) {
-            let cod = inputElement.value.trim();
+            let cod = inputElement.value.trim().toUpperCase();
             let inEquip = document.getElementById('in-equipamento');
 
             if (cod === "") {
