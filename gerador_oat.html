@@ -222,16 +222,16 @@
             </fieldset>
 
             <fieldset>
-                <legend>5. Fotos / Evidências</legend>
+                <legend>5. Fotos / Evidências / Comprovantes</legend>
                 <div class="form-grupo">
-                    <label>Fotos do Equip. e Instalação <span class="obrigatorio">*</span></label>
+                    <label>Fotos do Equip., Instalação, Comprovante de Taxa e Nota Fiscal <span class="obrigatorio">*</span></label>
                     <input type="file" id="in-anexo" accept="image/*" multiple onchange="carregarImagens(event)" required>
-                    <small style="color: #666; font-size: 10px;">Selecione várias fotos segurando o botão CTRL.</small>
+                    <small style="color: #666; font-size: 10px;">Selecione as fotos e o print do comprovante segurando o botão CTRL.</small>
                 </div>
             </fieldset>
 
             <button type="submit" class="btn-acao" id="btn-imprimir">🖨️ VALIDAR E GERAR PDF</button>
-            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.7 Trello + Novos Campos ✅</div>
+            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.8 Trello + Novos Campos ✅</div>
         </form>
     </div>
 
@@ -249,16 +249,16 @@
             <table class="tabela-oat">
                 <tbody>
                     <tr>
-                        <th width="15%">ID CVortex:</th>
-                        <td id="out-cvortex" width="18%"></td>
-                        <th width="22%">Data de Solicitação:</th>
-                        <td id="out-abertura-id" width="15%"></td>
-                        <th width="15%">Data Visita:</th>
-                        <td id="out-data-visita"></td>
+                        <th width="20%">ID CVortex:</th>
+                        <td id="out-cvortex" width="30%"></td>
+                        <th width="20%">Data de Solicitação:</th>
+                        <td id="out-abertura-id" width="30%"></td>
                     </tr>
                     <tr>
+                        <th>Data Visita:</th>
+                        <td id="out-data-visita"></td>
                         <th>Reincidência:</th>
-                        <td id="out-reincidencia" colspan="5"></td>
+                        <td id="out-reincidencia"></td>
                     </tr>
                 </tbody>
             </table>
@@ -317,7 +317,7 @@
             <div class="caixa-reclame" id="out-reclame"></div>
 
             <div class="rodape-obs">
-                ESTE DOCUMENTO DEVE ESTAR ACOMPANHADO DAS FOTOS / EVIDÊNCIAS DE INSTALAÇÃO
+                ESTE DOCUMENTO DEVE ESTAR ACOMPANHADO DAS FOTOS / EVIDÊNCIAS DE INSTALAÇÃO E COMPROVANTE DE TAXA
             </div>
 
         </div>
