@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de OAT - Sodramar</title>
     <style>
-        /* --- ESTILO DO SISTEMA (TELA DE TRABALHO) --- */
         :root {
             --cor-primaria: #005bbb;
             --cor-fundo: #e9ecef;
@@ -41,7 +40,6 @@
         fieldset { border: 1px solid #ccc; padding: 10px 15px; border-radius: 5px; margin-bottom: 15px; background-color: #fafafa; }
         legend { font-weight: bold; font-size: 12px; color: var(--cor-primaria); padding: 0 5px; background-color: #fafafa; border: 1px solid #ccc; border-radius: 3px; }
 
-        /* --- ESTILO DA FOLHA DE IMPRESSÃO (A4 RESTRITO) --- */
         .painel-preview { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; justify-content: flex-start; background-color: #525659; flex-direction: column; align-items: center; gap: 20px;}
         
         .folha-a4 {
@@ -66,12 +64,10 @@
 
         .rodape-obs { font-size: 9px; text-align: center; font-weight: bold; margin-top: auto; border: 1px solid #000; padding: 5px; background-color: #e0e0e0;}
 
-        /* --- ESTILO DE GRID PARA 4 FOTOS --- */
         .grid-fotos { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10mm; width: 100%; height: 250mm; box-sizing: border-box; padding-top: 10mm; }
         .grid-fotos .foto-item { border: 1px solid #000; display: flex; align-items: center; justify-content: center; padding: 5px; box-sizing: border-box; overflow: hidden; }
         .grid-fotos img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-        /* --- CONFIGURAÇÕES PARA IMPRESSÃO --- */
         @media print {
             @page { size: A4; margin: 10mm; }
             body, html { background: none; margin: 0; padding: 0; height: auto; }
@@ -103,11 +99,10 @@
         
         <div id="status-db">⏳ Conectando à base de dados...</div>
 
-        <!-- Formulário usa evento onsubmit para chamar prepararImpressao -->
         <form id="formOAT" onsubmit="event.preventDefault(); prepararImpressao(); return false;">
             
             <p style="font-size: 11px; color: #666; margin-top: 0; margin-bottom: 10px;">
-                Os campos marcados com <span class="obrigatorio">*</span> são obrigatórios para a emissão.
+                Os campos marcados com <span class="obrigatorio">*</span> são obrigatórios.
             </p>
 
             <fieldset>
@@ -118,12 +113,22 @@
                         <input type="text" id="in-cvortex" oninput="atualizar()" placeholder="Ex: 123456" required>
                     </div>
                     <div class="form-grupo" style="flex: 1;">
-                        <label>Abertura do ID <span class="obrigatorio">*</span></label>
+                        <label>Data de Solicitação <span class="obrigatorio">*</span></label>
                         <input type="text" id="in-abertura-id" oninput="formatarData(this)" placeholder="DD/MM/AAAA" maxlength="10" required>
                     </div>
+                </div>
+                <div class="linha">
                     <div class="form-grupo" style="flex: 1;">
                         <label>Data da Visita <span class="obrigatorio">*</span></label>
                         <input type="text" id="in-data-visita" oninput="formatarData(this)" placeholder="DD/MM/AAAA" maxlength="10" required>
+                    </div>
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>Reincidência? <span class="obrigatorio">*</span></label>
+                        <select id="in-reincidencia" onchange="atualizar()" required>
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="SIM">SIM</option>
+                            <option value="NÃO">NÃO</option>
+                        </select>
                     </div>
                 </div>
             </fieldset>
@@ -174,13 +179,36 @@
                     </div>
                 </div>
                 <div class="linha">
-                    <div class="form-grupo">
-                        <label>Nota Fiscal <span class="obrigatorio">*</span></label>
-                        <input type="text" id="in-nf" oninput="atualizar()" placeholder="Número da NF" required>
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>Garantia? <span class="obrigatorio">*</span></label>
+                        <select id="in-garantia" onchange="toggleGarantia(); atualizar();" required>
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="SIM">SIM</option>
+                            <option value="NÃO">NÃO</option>
+                        </select>
                     </div>
-                    <div class="form-grupo">
+                    <div class="form-grupo" style="flex: 1;">
                         <label>Orçamento <span class="obrigatorio">*</span></label>
                         <input type="text" id="in-orcamento" oninput="atualizar()" placeholder="Nº do Orçamento" required>
+                    </div>
+                </div>
+                
+                <!-- Caixas Dinâmicas de Documento com base na Garantia -->
+                <div class="linha" id="box-garantia-sim" style="display: none;">
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>Nota Fiscal <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-nf" oninput="atualizar()" placeholder="Número da NF">
+                    </div>
+                </div>
+                
+                <div class="linha" id="box-garantia-nao" style="display: none;">
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>Nº do Pedido <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-pedido" oninput="atualizar()" placeholder="Número do Pedido">
+                    </div>
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>Comprovante da Taxa de Visita <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-comprovante-taxa" oninput="atualizar()" placeholder="Ex: Anexado, Boleto Nº XYZ">
                     </div>
                 </div>
             </fieldset>
@@ -198,12 +226,12 @@
                 <div class="form-grupo">
                     <label>Fotos do Equip. e Instalação <span class="obrigatorio">*</span></label>
                     <input type="file" id="in-anexo" accept="image/*" multiple onchange="carregarImagens(event)" required>
-                    <small style="color: #666; font-size: 10px;">Selecione uma ou mais fotos segurando CTRL.</small>
+                    <small style="color: #666; font-size: 10px;">Selecione várias fotos segurando o botão CTRL.</small>
                 </div>
             </fieldset>
 
             <button type="submit" class="btn-acao" id="btn-imprimir">🖨️ VALIDAR E GERAR PDF</button>
-            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.6 Trello + DB Original ✅</div>
+            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.7 Trello + Novos Campos ✅</div>
         </form>
     </div>
 
@@ -223,10 +251,14 @@
                     <tr>
                         <th width="15%">ID CVortex:</th>
                         <td id="out-cvortex" width="18%"></td>
-                        <th width="18%">Abertura do ID:</th>
-                        <td id="out-abertura-id" width="18%"></td>
+                        <th width="22%">Data de Solicitação:</th>
+                        <td id="out-abertura-id" width="15%"></td>
                         <th width="15%">Data Visita:</th>
                         <td id="out-data-visita"></td>
+                    </tr>
+                    <tr>
+                        <th>Reincidência:</th>
+                        <td id="out-reincidencia" colspan="5"></td>
                     </tr>
                 </tbody>
             </table>
@@ -266,10 +298,16 @@
                         <td id="out-equipamento"></td>
                     </tr>
                     <tr>
-                        <th>Nota Fiscal:</th>
-                        <td id="out-nf"></td>
+                        <th>Garantia:</th>
+                        <td id="out-garantia"></td>
                         <th>Orçamento:</th>
                         <td id="out-orcamento"></td>
+                    </tr>
+                    <tr id="tr-garantia-docs" style="display: none;">
+                        <th id="th-doc1"></th>
+                        <td id="td-doc1"></td>
+                        <th id="th-doc2"></th>
+                        <td id="td-doc2"></td>
                     </tr>
                 </tbody>
             </table>
@@ -293,12 +331,8 @@
         // CONFIGURAÇÕES DO TRELLO 
         // =========================================================
         const TRELLO_KEY = 'bdcd417a43c74f690ac0a386212ccd4e';
-        
-        // Criptografado em Base64 para enganar o GitHub Actions
         const TOKEN_B64 = 'QVRUQTJkNTc3NGEwYWNlYmU0MzlmOTI3ZTVlNGRkZWY0OGE0OGMzMTY5YjMxMmI4NmI3MWEwNDFjMzExMzEwOGQ1ODdDRTREMDY3Mg==';
         const TRELLO_TOKEN = atob(TOKEN_B64);
-        
-        // ID exato da lista
         const TRELLO_LIST_ID = '6a46a90ab98a5f14fccce9a9'; 
         // =========================================================
 
@@ -310,7 +344,6 @@
             elementos.forEach(el => el.disabled = estadoDesabilitado);
         }
 
-        // --- SISTEMA DE BANCO DE DADOS (VERSÃO ORIGINAL FUNCIONAL) ---
         function carregarBancoDeDados(forcarAtualizacao = false) {
             setEstadoFormulario(true);
             const statusDiv = document.getElementById('status-db');
@@ -388,10 +421,45 @@
             document.getElementById(idOut).innerText = val ? val + sufixo : '';
         }
 
+        // --- SISTEMA DINÂMICO DE GARANTIA ---
+        function toggleGarantia() {
+            const val = document.getElementById('in-garantia').value;
+            const boxSim = document.getElementById('box-garantia-sim');
+            const boxNao = document.getElementById('box-garantia-nao');
+            
+            const nf = document.getElementById('in-nf');
+            const pedido = document.getElementById('in-pedido');
+            const taxa = document.getElementById('in-comprovante-taxa');
+
+            if (val === 'SIM') {
+                boxSim.style.display = 'flex';
+                boxNao.style.display = 'none';
+                nf.required = true;
+                pedido.required = false;
+                taxa.required = false;
+                pedido.value = '';
+                taxa.value = '';
+            } else if (val === 'NÃO') {
+                boxSim.style.display = 'none';
+                boxNao.style.display = 'flex';
+                nf.required = false;
+                pedido.required = true;
+                taxa.required = true;
+                nf.value = '';
+            } else {
+                boxSim.style.display = 'none';
+                boxNao.style.display = 'none';
+                nf.required = false;
+                pedido.required = false;
+                taxa.required = false;
+            }
+        }
+
         function atualizar() {
             setTexto('out-cvortex', 'in-cvortex');
             setTexto('out-abertura-id', 'in-abertura-id');
             setTexto('out-data-visita', 'in-data-visita');
+            document.getElementById('out-reincidencia').innerText = getVal('in-reincidencia');
             
             setTexto('out-cliente', 'in-cliente');
             setTexto('out-end', 'in-end');
@@ -403,9 +471,38 @@
 
             setTexto('out-codigo', 'in-codigo');
             setTexto('out-equipamento', 'in-equipamento');
-            setTexto('out-nf', 'in-nf');
             setTexto('out-orcamento', 'in-orcamento');
             
+            // Controle dinâmico do documento no PDF
+            const valGarantia = getVal('in-garantia');
+            document.getElementById('out-garantia').innerText = valGarantia;
+            
+            const trDocs = document.getElementById('tr-garantia-docs');
+            const thDoc1 = document.getElementById('th-doc1');
+            const tdDoc1 = document.getElementById('td-doc1');
+            const thDoc2 = document.getElementById('th-doc2');
+            const tdDoc2 = document.getElementById('td-doc2');
+
+            if (valGarantia === 'SIM') {
+                trDocs.style.display = 'table-row';
+                thDoc1.innerText = 'Nota Fiscal:';
+                tdDoc1.innerText = getVal('in-nf');
+                tdDoc1.setAttribute('colspan', '3'); 
+                thDoc2.style.display = 'none';
+                tdDoc2.style.display = 'none';
+            } else if (valGarantia === 'NÃO') {
+                trDocs.style.display = 'table-row';
+                thDoc1.innerText = 'Nº Pedido:';
+                tdDoc1.innerText = getVal('in-pedido');
+                tdDoc1.removeAttribute('colspan');
+                thDoc2.style.display = 'table-cell';
+                tdDoc2.style.display = 'table-cell';
+                thDoc2.innerText = 'Comprovante Taxa:';
+                tdDoc2.innerText = getVal('in-comprovante-taxa');
+            } else {
+                trDocs.style.display = 'none';
+            }
+
             setTexto('out-reclame', 'in-reclame');
         }
 
@@ -447,18 +544,24 @@
             }
         }
 
-        // --- SISTEMA DE INTEGRAÇÃO COM TRELLO ---
         async function enviarParaTrello() {
             const cvortex = getVal('in-cvortex');
             const cliente = getVal('in-cliente');
             const equipamento = getVal('in-equipamento');
             const reclame = document.getElementById('in-reclame').value.trim().toUpperCase();
 
-            const desc = `**1. DADOS DO ATENDIMENTO**\n- **ID CVortex:** ${cvortex}\n- **Abertura do ID:** ${getVal('in-abertura-id')}\n- **Data Visita:** ${getVal('in-data-visita')}\n\n**2. DADOS DO CLIENTE / LOCAL**\n- **Cliente:** ${cliente}\n- **Endereço:** ${getVal('in-end')}\n- **Complemento:** ${getVal('in-complemento')}\n- **Condomínio:** ${getVal('in-condominio')}\n- **Distância:** ${getVal('in-distancia')} KM\n\n**3. EQUIPAMENTO E DOCUMENTAÇÃO**\n- **Código:** ${getVal('in-codigo')}\n- **Equipamento:** ${equipamento}\n- **Nota Fiscal:** ${getVal('in-nf')}\n- **Orçamento:** ${getVal('in-orcamento')}\n\n**4. RECLAME / MOTIVO**\n${reclame}`;
+            // Formatação inteligente dos documentos para o Trello dependendo da garantia
+            let docsText = '';
+            if (getVal('in-garantia') === 'SIM') {
+                docsText = `- **Nota Fiscal:** ${getVal('in-nf')}`;
+            } else {
+                docsText = `- **Nº do Pedido:** ${getVal('in-pedido')}\n- **Comprovante Taxa:** ${getVal('in-comprovante-taxa')}`;
+            }
+
+            const desc = `**1. DADOS DO ATENDIMENTO**\n- **ID CVortex:** ${cvortex}\n- **Data Solicitação:** ${getVal('in-abertura-id')}\n- **Data Visita:** ${getVal('in-data-visita')}\n- **Reincidência:** ${getVal('in-reincidencia')}\n\n**2. DADOS DO CLIENTE / LOCAL**\n- **Cliente:** ${cliente}\n- **Endereço:** ${getVal('in-end')}\n- **Complemento:** ${getVal('in-complemento')}\n- **Condomínio:** ${getVal('in-condominio')}\n- **Distância:** ${getVal('in-distancia')} KM\n\n**3. EQUIPAMENTO E DOCUMENTAÇÃO**\n- **Código:** ${getVal('in-codigo')}\n- **Equipamento:** ${equipamento}\n- **Orçamento:** ${getVal('in-orcamento')}\n- **Garantia:** ${getVal('in-garantia')}\n${docsText}\n\n**4. RECLAME / MOTIVO**\n${reclame}`;
 
             const tituloCard = `[OAT] ${cvortex} - ${cliente} - ${equipamento}`;
 
-            // 1. Criar o Cartão Base
             const urlCriar = `https://api.trello.com/1/cards?key=${TRELLO_KEY}&token=${TRELLO_TOKEN}`;
             const resCriar = await fetch(urlCriar, {
                 method: 'POST',
@@ -482,7 +585,6 @@
             const cardData = await resCriar.json();
             const cardId = cardData.id;
 
-            // 2. Enviar Arquivos Anexos um por um
             const files = document.getElementById('in-anexo').files;
             if (files && files.length > 0) {
                 for (let i = 0; i < files.length; i++) {
@@ -496,7 +598,6 @@
             }
         }
 
-        // --- GATILHO PRINCIPAL (TRELLO + IMPRESSÃO) ---
         async function prepararImpressao() {
             const btn = document.getElementById('btn-imprimir');
             const statusDiv = document.getElementById('status-db');
