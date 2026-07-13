@@ -131,6 +131,12 @@
                         </select>
                     </div>
                 </div>
+                <div class="linha">
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>Atendente (SAS) <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-atendente" oninput="atualizar()" placeholder="Nome do atendente" required>
+                    </div>
+                </div>
             </fieldset>
 
             <fieldset>
@@ -224,14 +230,14 @@
             <fieldset>
                 <legend>5. Fotos / Evidências / Comprovantes</legend>
                 <div class="form-grupo">
-                    <label>Fotos do Equip., Instalação, Comprovante de Taxa e Nota Fiscal <span class="obrigatorio">*</span></label>
+                    <label>Fotos do Equip., Instalação e Comprovante de Taxa <span class="obrigatorio">*</span></label>
                     <input type="file" id="in-anexo" accept="image/*" multiple onchange="carregarImagens(event)" required>
                     <small style="color: #666; font-size: 10px;">Selecione as fotos e o print do comprovante segurando o botão CTRL.</small>
                 </div>
             </fieldset>
 
             <button type="submit" class="btn-acao" id="btn-imprimir">🖨️ VALIDAR E GERAR PDF</button>
-            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.8 Trello + Novos Campos ✅</div>
+            <div style="text-align: center; font-size: 11px; color: #155724; margin-top: 10px; font-weight: bold;">v2.9 Atendente ✅</div>
         </form>
     </div>
 
@@ -259,6 +265,10 @@
                         <td id="out-data-visita"></td>
                         <th>Reincidência:</th>
                         <td id="out-reincidencia"></td>
+                    </tr>
+                    <tr>
+                        <th>Atendente:</th>
+                        <td id="out-atendente" colspan="3"></td>
                     </tr>
                 </tbody>
             </table>
@@ -460,6 +470,7 @@
             setTexto('out-abertura-id', 'in-abertura-id');
             setTexto('out-data-visita', 'in-data-visita');
             document.getElementById('out-reincidencia').innerText = getVal('in-reincidencia');
+            setTexto('out-atendente', 'in-atendente');
             
             setTexto('out-cliente', 'in-cliente');
             setTexto('out-end', 'in-end');
@@ -558,7 +569,7 @@
                 docsText = `- **Nº do Pedido:** ${getVal('in-pedido')}\n- **Comprovante Taxa:** ${getVal('in-comprovante-taxa')}`;
             }
 
-            const desc = `**1. DADOS DO ATENDIMENTO**\n- **ID CVortex:** ${cvortex}\n- **Data Solicitação:** ${getVal('in-abertura-id')}\n- **Data Visita:** ${getVal('in-data-visita')}\n- **Reincidência:** ${getVal('in-reincidencia')}\n\n**2. DADOS DO CLIENTE / LOCAL**\n- **Cliente:** ${cliente}\n- **Endereço:** ${getVal('in-end')}\n- **Complemento:** ${getVal('in-complemento')}\n- **Condomínio:** ${getVal('in-condominio')}\n- **Distância:** ${getVal('in-distancia')} KM\n\n**3. EQUIPAMENTO E DOCUMENTAÇÃO**\n- **Código:** ${getVal('in-codigo')}\n- **Equipamento:** ${equipamento}\n- **Orçamento:** ${getVal('in-orcamento')}\n- **Garantia:** ${getVal('in-garantia')}\n${docsText}\n\n**4. RECLAME / MOTIVO**\n${reclame}`;
+            const desc = `**1. DADOS DO ATENDIMENTO**\n- **ID CVortex:** ${cvortex}\n- **Data Solicitação:** ${getVal('in-abertura-id')}\n- **Data Visita:** ${getVal('in-data-visita')}\n- **Reincidência:** ${getVal('in-reincidencia')}\n- **Atendente:** ${getVal('in-atendente')}\n\n**2. DADOS DO CLIENTE / LOCAL**\n- **Cliente:** ${cliente}\n- **Endereço:** ${getVal('in-end')}\n- **Complemento:** ${getVal('in-complemento')}\n- **Condomínio:** ${getVal('in-condominio')}\n- **Distância:** ${getVal('in-distancia')} KM\n\n**3. EQUIPAMENTO E DOCUMENTAÇÃO**\n- **Código:** ${getVal('in-codigo')}\n- **Equipamento:** ${equipamento}\n- **Orçamento:** ${getVal('in-orcamento')}\n- **Garantia:** ${getVal('in-garantia')}\n${docsText}\n\n**4. RECLAME / MOTIVO**\n${reclame}`;
 
             const tituloCard = `[OAT] ${cvortex} - ${cliente} - ${equipamento}`;
 
