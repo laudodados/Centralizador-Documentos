@@ -141,18 +141,49 @@
 
             <fieldset>
                 <legend>2. Dados do Cliente</legend>
-                <div class="form-grupo">
-                    <label>Cliente / Empresa <span class="obrigatorio">*</span></label>
-                    <input type="text" id="in-cliente" oninput="atualizar()" placeholder="Nome do cliente" required>
+                <div class="linha">
+                    <div class="form-grupo" style="flex: 2;">
+                        <label>Cliente / Empresa <span class="obrigatorio">*</span></label>
+                        <input type="text" id="in-cliente" oninput="atualizar()" placeholder="Nome do cliente" required>
+                    </div>
+                    <div class="form-grupo" style="flex: 1;">
+                        <label>Tipo de Cliente <span class="obrigatorio">*</span></label>
+                        <select id="in-tipo-cliente" onchange="toggleTipoCliente(); atualizar();" required>
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="LOJA">LOJA</option>
+                            <option value="CLIENTE FINAL">CLIENTE FINAL</option>
+                        </select>
+                    </div>
                 </div>
+
+                <div class="form-grupo" id="box-loja" style="display: none; background-color: #e9ecef; padding: 10px; border-radius: 4px;">
+                    <label>A loja vai acompanhar o atendimento? <span class="obrigatorio">*</span></label>
+                    <select id="in-acompanhamento-loja" onchange="atualizar()">
+                        <option value="" disabled selected>Selecione...</option>
+                        <option value="SIM">SIM</option>
+                        <option value="NÃO">NÃO</option>
+                    </select>
+                </div>
+
+                <div class="form-grupo" id="box-cliente-final" style="display: none; background-color: #e9ecef; padding: 10px; border-radius: 4px;">
+                    <label>Celular do Cliente (Com DDD) <span class="obrigatorio">*</span></label>
+                    <input type="text" id="in-celular-cliente" oninput="atualizar()" placeholder="Ex: (11) 99999-9999">
+                </div>
+
                 <div class="form-grupo">
                     <label>Endereço Completo <span class="obrigatorio">*</span></label>
                     <input type="text" id="in-end" oninput="atualizar()" placeholder="Rua, Número, Bairro, Cidade - UF" required>
                 </div>
                 <div class="linha">
                     <div class="form-grupo" style="flex: 2;">
-                        <label>Complemento</label>
-                        <input type="text" id="in-complemento" oninput="atualizar()" placeholder="Apto, Galpão, Bloco, etc.">
+                        <label>Complemento <span class="obrigatorio">*</span></label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="in-complemento" oninput="atualizar()" placeholder="Apto, Galpão, Bloco, etc." required style="flex: 1;">
+                            <label style="margin: 0; display: flex; align-items: center; gap: 5px; font-weight: normal; cursor: pointer; white-space: nowrap;">
+                                <input type="checkbox" id="chk-sem-complemento" onchange="toggleComplemento(); atualizar();" style="width: auto; cursor: pointer;">
+                                Sem compl.
+                            </label>
+                        </div>
                     </div>
                     <div class="form-grupo" style="flex: 1;">
                         <label>É Condomínio? <span class="obrigatorio">*</span></label>
@@ -279,7 +310,13 @@
                 <tbody>
                     <tr>
                         <th width="20%">Cliente:</th>
-                        <td id="out-cliente" colspan="3"></td>
+                        <td id="out-cliente" width="30%"></td>
+                        <th width="20%">Tipo Cliente:</th>
+                        <td id="out-tipo-cliente" width="30%"></td>
+                    </tr>
+                    <tr id="tr-info-cliente" style="display: none; background-color: #fdfdfd;">
+                        <th id="th-info-cliente"></th>
+                        <td id="out-info-cliente" colspan="3"></td>
                     </tr>
                     <tr>
                         <th>Endereço:</th>
@@ -431,7 +468,49 @@
             document.getElementById(idOut).innerText = val ? val + sufixo : '';
         }
 
-        // --- SISTEMA DINÂMICO DE GARANTIA ---
+        // --- SISTEMA DINÂMICO DE GARANTIA E CLIENTES ---
+        function toggleComplemento() {
+            const chk = document.getElementById('chk-sem-complemento').checked;
+            const inComp = document.getElementById('in-complemento');
+            if (chk) {
+                inComp.disabled = true;
+                inComp.required = false;
+                inComp.value = '';
+            } else {
+                inComp.disabled = false;
+                inComp.required = true;
+            }
+        }
+
+        function toggleTipoCliente() {
+            const tipo = document.getElementById('in-tipo-cliente').value;
+            const boxLoja = document.getElementById('box-loja');
+            const boxFinal = document.getElementById('box-cliente-final');
+            const inLoja = document.getElementById('in-acompanhamento-loja');
+            const inCelular = document.getElementById('in-celular-cliente');
+
+            if (tipo === 'LOJA') {
+                boxLoja.style.display = 'block';
+                boxFinal.style.display = 'none';
+                inLoja.required = true;
+                inCelular.required = false;
+                inCelular.value = '';
+            } else if (tipo === 'CLIENTE FINAL') {
+                boxLoja.style.display = 'none';
+                boxFinal.style.display = 'block';
+                inLoja.required = false;
+                inLoja.value = '';
+                inCelular.required = true;
+            } else {
+                boxLoja.style.display = 'none';
+                boxFinal.style.display = 'none';
+                inLoja.required = false;
+                inCelular.required = false;
+                inLoja.value = '';
+                inCelular.value = '';
+            }
+        }
+
         function toggleGarantia() {
             const val = document.getElementById('in-garantia').value;
             const boxSim = document.getElementById('box-garantia-sim');
@@ -474,7 +553,31 @@
             
             setTexto('out-cliente', 'in-cliente');
             setTexto('out-end', 'in-end');
-            setTexto('out-complemento', 'in-complemento');
+            
+            // Controle Dinâmico do Tipo de Cliente no PDF
+            const tipoCli = getVal('in-tipo-cliente');
+            document.getElementById('out-tipo-cliente').innerText = tipoCli;
+            
+            const trInfoCli = document.getElementById('tr-info-cliente');
+            const thInfoCli = document.getElementById('th-info-cliente');
+            const outInfoCli = document.getElementById('out-info-cliente');
+
+            if (tipoCli === 'LOJA') {
+                trInfoCli.style.display = 'table-row';
+                thInfoCli.innerText = 'Loja Acompanha:';
+                outInfoCli.innerText = getVal('in-acompanhamento-loja');
+            } else if (tipoCli === 'CLIENTE FINAL') {
+                trInfoCli.style.display = 'table-row';
+                thInfoCli.innerText = 'Celular:';
+                outInfoCli.innerText = getVal('in-celular-cliente');
+            } else {
+                trInfoCli.style.display = 'none';
+            }
+
+            // Controle do Complemento Dinâmico no PDF
+            const chkSemComp = document.getElementById('chk-sem-complemento').checked;
+            document.getElementById('out-complemento').innerText = chkSemComp ? 'SEM COMPLEMENTO' : getVal('in-complemento');
+
             setTexto('out-condominio', 'in-condominio');
             
             let dist = getVal('in-distancia');
@@ -561,6 +664,16 @@
             const equipamento = getVal('in-equipamento');
             const reclame = document.getElementById('in-reclame').value.trim().toUpperCase();
 
+            // Formatação do Tipo de Cliente e Complemento
+            const tipoCli = getVal('in-tipo-cliente');
+            let infoExtraCli = '';
+            if (tipoCli === 'LOJA') {
+                infoExtraCli = `- **Loja Acompanha:** ${getVal('in-acompanhamento-loja')}\n`;
+            } else if (tipoCli === 'CLIENTE FINAL') {
+                infoExtraCli = `- **Celular:** ${getVal('in-celular-cliente')}\n`;
+            }
+            const compStr = document.getElementById('chk-sem-complemento').checked ? 'SEM COMPLEMENTO' : getVal('in-complemento');
+
             // Formatação inteligente dos documentos para o Trello dependendo da garantia
             let docsText = '';
             if (getVal('in-garantia') === 'SIM') {
@@ -569,7 +682,7 @@
                 docsText = `- **Nº do Pedido:** ${getVal('in-pedido')}\n- **Comprovante Taxa:** ${getVal('in-comprovante-taxa')}`;
             }
 
-            const desc = `**1. DADOS DO ATENDIMENTO**\n- **ID CVortex:** ${cvortex}\n- **Data Solicitação:** ${getVal('in-abertura-id')}\n- **Data Visita:** ${getVal('in-data-visita')}\n- **Reincidência:** ${getVal('in-reincidencia')}\n- **Atendente:** ${getVal('in-atendente')}\n\n**2. DADOS DO CLIENTE / LOCAL**\n- **Cliente:** ${cliente}\n- **Endereço:** ${getVal('in-end')}\n- **Complemento:** ${getVal('in-complemento')}\n- **Condomínio:** ${getVal('in-condominio')}\n- **Distância:** ${getVal('in-distancia')} KM\n\n**3. EQUIPAMENTO E DOCUMENTAÇÃO**\n- **Código:** ${getVal('in-codigo')}\n- **Equipamento:** ${equipamento}\n- **Orçamento:** ${getVal('in-orcamento')}\n- **Garantia:** ${getVal('in-garantia')}\n${docsText}\n\n**4. RECLAME / MOTIVO**\n${reclame}`;
+            const desc = `**1. DADOS DO ATENDIMENTO**\n- **ID CVortex:** ${cvortex}\n- **Data Solicitação:** ${getVal('in-abertura-id')}\n- **Data Visita:** ${getVal('in-data-visita')}\n- **Reincidência:** ${getVal('in-reincidencia')}\n- **Atendente:** ${getVal('in-atendente')}\n\n**2. DADOS DO CLIENTE / LOCAL**\n- **Cliente:** ${cliente}\n- **Tipo Cliente:** ${tipoCli}\n${infoExtraCli}- **Endereço:** ${getVal('in-end')}\n- **Complemento:** ${compStr}\n- **Condomínio:** ${getVal('in-condominio')}\n- **Distância:** ${getVal('in-distancia')} KM\n\n**3. EQUIPAMENTO E DOCUMENTAÇÃO**\n- **Código:** ${getVal('in-codigo')}\n- **Equipamento:** ${equipamento}\n- **Orçamento:** ${getVal('in-orcamento')}\n- **Garantia:** ${getVal('in-garantia')}\n${docsText}\n\n**4. RECLAME / MOTIVO**\n${reclame}`;
 
             const tituloCard = `[OAT] ${cvortex} - ${cliente} - ${equipamento}`;
 
