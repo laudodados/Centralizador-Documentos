@@ -83,7 +83,7 @@
 <body>
 
     <div class="painel-lateral">
-        <a href="centralizador.html" class="btn-voltar">⬅ Voltar ao Menu</a>
+        <a href="./index.html" class="btn-voltar">⬅ Voltar ao Menu</a>
         <h1>Ficha de Criação de Códigos</h1>
         <div id="status-db">⏳ Conectando à base de dados...</div>
 
@@ -391,10 +391,14 @@
     </div>
 
     <script>
-        // Novo Link de banco de dados específico para Sol.AB
         const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbyOTdpPB8q4DTelfleOsQLdH1bnGLB02p718ePEFTvNHZabX4_L1GoStPxmSHMLHlD0/exec";
         
         let dbLocal = [];
+
+        // Nova função para ignorar acentos na busca
+        function removerAcentos(texto) {
+            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+        }
 
         function carregarBancoDeDados() {
             const statusDiv = document.getElementById('status-db');
@@ -480,13 +484,20 @@
                 document.getElementById('in-descncm').value = "";
                 document.getElementById('in-codsim').value = "";
                 document.getElementById('in-ncmsim').value = "";
-                containerSimilares.style.display = 'none';
+                
+                let campoDesc = document.getElementById('in-buscadesc');
+                if (!campoDesc || campoDesc.value.trim().length < 3) {
+                    containerSimilares.style.display = 'none';
+                }
                 atualizar();
                 return;
             }
 
             if (termoLimpo.length < 2 || dbLocal.length === 0) {
-                containerSimilares.style.display = 'none';
+                let campoDesc = document.getElementById('in-buscadesc');
+                if (!campoDesc || campoDesc.value.trim().length < 3) {
+                    containerSimilares.style.display = 'none';
+                }
                 return;
             }
 
@@ -535,13 +546,17 @@
         }
 
         function buscarPorDescricao() {
-            let termo = document.getElementById('in-buscadesc').value.trim().toUpperCase();
+            let campo = document.getElementById('in-buscadesc');
+            if (!campo) return;
+            let termo = removerAcentos(campo.value.trim());
             const containerSimilares = document.getElementById('container-similares');
             const listaDiv = document.getElementById('lista-opcoes-ncm');
 
-            // Exige pelo menos 3 letras para começar a busca e não travar o navegador
             if (termo.length < 3 || dbLocal.length === 0) {
-                containerSimilares.style.display = 'none';
+                let campoNcm = document.getElementById('in-ncm');
+                if (!campoNcm || campoNcm.value.trim().length < 2) {
+                    containerSimilares.style.display = 'none';
+                }
                 return;
             }
 
@@ -550,11 +565,12 @@
 
             for (let i = 0; i < dbLocal.length; i++) {
                 let p = dbLocal[i];
-                let descStr = String(p.desc || "").toUpperCase();
+                let descStrOriginal = String(p.desc || "");
+                let descStrBusca = removerAcentos(descStrOriginal);
 
-                if (descStr.includes(termo)) {
+                if (descStrBusca.includes(termo)) {
                     let ncmStr = String(p.ncm || "");
-                    let descSafe = String(p.desc || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    let descSafe = descStrOriginal.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     let descNcmSafe = String(p.descNcm || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     
                     opcoesHTML += `<div class="sugestao-item" onclick="selecionarSimilar('${p.codigo}', '${ncmStr}', '${descNcmSafe}')">
