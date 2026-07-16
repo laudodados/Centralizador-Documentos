@@ -181,13 +181,14 @@
                 <div class="form-grupo"><label class="obrigatorio">Descrição NCM</label><input type="text" id="in-descncm" oninput="atualizar()"></div>
 
                 <div id="container-similares" class="container-similares">
-                    <label style="font-size: 11px; color: #495057; margin-bottom: 5px; display: block;">🔍 Códigos Similares por NCM (Clique para usar):</label>
+                    <label style="font-size: 11px; color: #495057; margin-bottom: 5px; display: block;">🔍 Sugestões de Códigos Similares (Clique para usar):</label>
                     <div id="lista-opcoes-ncm"></div>
                 </div>
 
                 <div class="linha" style="margin-top: 10px;">
-                    <div class="form-grupo"><label>Cód. Similar</label><input type="text" id="in-codsim" oninput="atualizar()"></div>
-                    <div class="form-grupo"><label>NCM - Cód. Similar</label><input type="text" id="in-ncmsim" readonly style="background:#e9ecef;" oninput="atualizar()"></div>
+                    <div class="form-grupo" style="flex: 1.5;"><label>Buscar Similar (Por Descrição)</label><input type="text" id="in-buscadesc" placeholder="Digite p/ buscar..." onkeyup="buscarPorDescricao()"></div>
+                    <div class="form-grupo" style="flex: 1;"><label>Cód. Similar</label><input type="text" id="in-codsim" oninput="atualizar()"></div>
+                    <div class="form-grupo" style="flex: 1;"><label>NCM - Cód. Similar</label><input type="text" id="in-ncmsim" readonly style="background:#e9ecef;" oninput="atualizar()"></div>
                 </div>
             </fieldset>
 
@@ -531,6 +532,48 @@
             }
             
             atualizar();
+        }
+
+        function buscarPorDescricao() {
+            let termo = document.getElementById('in-buscadesc').value.trim().toUpperCase();
+            const containerSimilares = document.getElementById('container-similares');
+            const listaDiv = document.getElementById('lista-opcoes-ncm');
+
+            // Exige pelo menos 3 letras para começar a busca e não travar o navegador
+            if (termo.length < 3 || dbLocal.length === 0) {
+                containerSimilares.style.display = 'none';
+                return;
+            }
+
+            let opcoesHTML = "";
+            let contagem = 0;
+
+            for (let i = 0; i < dbLocal.length; i++) {
+                let p = dbLocal[i];
+                let descStr = String(p.desc || "").toUpperCase();
+
+                if (descStr.includes(termo)) {
+                    let ncmStr = String(p.ncm || "");
+                    let descSafe = String(p.desc || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    let descNcmSafe = String(p.descNcm || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    
+                    opcoesHTML += `<div class="sugestao-item" onclick="selecionarSimilar('${p.codigo}', '${ncmStr}', '${descNcmSafe}')">
+                                    <b>Cód: ${p.codigo}</b> | NCM: <span style="color:#005bbb;">${formatarNCMStr(ncmStr)}</span><br>
+                                    <span style="color:#555; font-size:10px;">${descSafe}</span>
+                                   </div>`;
+                    contagem++;
+                }
+
+                if (contagem >= 15) break; 
+            }
+
+            if (opcoesHTML !== "") {
+                listaDiv.innerHTML = opcoesHTML;
+                containerSimilares.style.display = 'block';
+            } else {
+                listaDiv.innerHTML = "<div style='font-size:11px; padding:5px;'>Nenhum produto similar encontrado com esta descrição.</div>";
+                containerSimilares.style.display = 'block';
+            }
         }
 
         function selecionarSimilar(codSelecionado, ncmSelecionado, descNcmSelecionada) {
